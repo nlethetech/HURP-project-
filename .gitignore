@@ -1,0 +1,18 @@
+# Data is reproducible from scripts; never commit it
+data/raw/
+data/interim/
+data/processed/
+!data/**/.gitkeep
+
+# Credentials
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

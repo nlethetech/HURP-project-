@@ -1,0 +1,4 @@
+# Pinned when first used; placeholders for the expected stack
+pandas
+requests
+python-dotenv
