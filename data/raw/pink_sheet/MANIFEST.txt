@@ -1,0 +1,3 @@
+filename	url	retrieved_utc	bytes	sha256
+CMO-Historical-Data-Annual.xlsx	https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Annual.xlsx	2026-06-11T17:46:59Z	3177955	9fbcb348f40ecdb02eb1bcf858a2965383d2aaf3445e8920dd7d60ae7b04af51
+CMO-Historical-Data-Monthly.xlsx	https://thedocs.worldbank.org/en/doc/74e8be41ceb20fa0da750cda2f6b9e4e-0050012026/related/CMO-Historical-Data-Monthly.xlsx	2026-06-11T17:46:59Z	588324	78a3373386d63020b6b45cb3df1c1c97bfb9347fda92ecd1e116cbffc8799ba9

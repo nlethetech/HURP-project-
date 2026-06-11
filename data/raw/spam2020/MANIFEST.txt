@@ -1,0 +1,3 @@
+filename	effective_source_url	canonical_doi	retrieved_utc	bytes	sha256
+spam2020V2r2_global_harvested_area.csv.zip	https://www.dropbox.com/scl/fi/py1g3yovxt8ws7hcfq3ys/spam2020V2r2_global_harvested_area.csv.zip?rlkey=6oay3zyojlhcz1416qsf10o31&dl=1	doi:10.7910/DVN/SWPENT (Dataverse file id 13740106)	2026-06-11T17:53:17Z	109231267	80be0da83c6691aa8be5bbdf1f5b689b5710ce4bdeb1d7bb70d5f3a433675e99
+Readme_SPAM2020V2r2.txt	https://www.dropbox.com/scl/fi/n5qyf8uk2ylwg8zmvbmng/Readme_SPAM2020V2r2.txt?rlkey=riphyjg4k2drkvt8ak9l8g4jk&dl=1	doi:10.7910/DVN/SWPENT (Dataverse file id 13803225)	2026-06-11T17:53:17Z	6016	3da2d847e69ab2edf2f4ccabf1ad66423935ac129b0ba245af570dadb34df9b9

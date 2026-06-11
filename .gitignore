@@ -1,5 +1,10 @@
-# Data is reproducible from scripts; never commit it
-data/raw/
+# Data is reproducible from scripts; never commit it.
+# Exception: per-source MANIFEST.txt provenance records (URL, retrieval date, sha256) stay in git.
+data/raw/*
+!data/raw/*/
+data/raw/*/*
+!data/raw/*/MANIFEST.txt
+!data/raw/.gitkeep
 data/interim/
 data/processed/
 !data/**/.gitkeep

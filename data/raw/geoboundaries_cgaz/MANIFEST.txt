@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+geoBoundariesCGAZ_ADM2.zip	https://github.com/wmgeolab/geoBoundaries/raw/main/releaseData/CGAZ/geoBoundariesCGAZ_ADM2.zip	2026-06-11T17:41:31Z	155911064	598f6c70893d60a35b96eb0dc31fd1c045e69177e4b8203407710306f6585de1

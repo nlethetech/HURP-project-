@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+Production_Crops_Livestock_E_All_Data_(Normalized).zip	https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip	2026-06-11T17:50:56Z	33921825	c5835418c18f9322e7decbd6800f93a216eaae3cdfa31acb08f0518c0c6d6853

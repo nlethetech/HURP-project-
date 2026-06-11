@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+ged261-csv.zip	https://ucdp.uu.se/downloads/ged/ged261-csv.zip	2026-06-11T17:47:58Z	39122522	8c941d84954e555ee2e54f40fa04d9203bf1e2f962203d0a9930966c4947c667
