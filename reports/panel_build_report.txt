@@ -1,0 +1,110 @@
+PANEL BUILD REPORT
+==================
+output: data/processed/panel_district_year.parquet
+rows:   1,825,173
+cols:   35
+
+column list (in order):
+  district_id  [str]
+  iso3  [str]
+  district_name  [str]
+  admin_level  [str]
+  year  [int64]
+  n_events_sb  [int64]
+  n_events_ns  [int64]
+  n_events_os  [int64]
+  n_events_total  [int64]
+  deaths_best_sb  [int64]
+  deaths_best_ns  [int64]
+  deaths_best_os  [int64]
+  deaths_best_total  [int64]
+  deaths_low_sb  [int64]
+  deaths_low_ns  [int64]
+  deaths_low_os  [int64]
+  deaths_low_total  [int64]
+  deaths_high_sb  [int64]
+  deaths_high_ns  [int64]
+  deaths_high_os  [int64]
+  deaths_high_total  [int64]
+  deaths_civilians_sb  [int64]
+  deaths_civilians_ns  [int64]
+  deaths_civilians_os  [int64]
+  deaths_civilians_total  [int64]
+  precip_mm  [float64]
+  yield_maize  [float64]
+  yield_rice  [float64]
+  yield_wheat  [float64]
+  yield_soybean  [float64]
+  income_group  [str]
+  income_group_carried  [bool]
+  cropland_ha  [float64]
+  price_shock_coverage  [float64]
+  price_shock  [float64]
+
+non-null counts per column:
+  district_id                 1,825,173
+  iso3                        1,825,173
+  district_name               1,825,173
+  admin_level                 1,825,173
+  year                        1,825,173
+  n_events_sb                 1,825,173
+  n_events_ns                 1,825,173
+  n_events_os                 1,825,173
+  n_events_total              1,825,173
+  deaths_best_sb              1,825,173
+  deaths_best_ns              1,825,173
+  deaths_best_os              1,825,173
+  deaths_best_total           1,825,173
+  deaths_low_sb               1,825,173
+  deaths_low_ns               1,825,173
+  deaths_low_os               1,825,173
+  deaths_low_total            1,825,173
+  deaths_high_sb              1,825,173
+  deaths_high_ns              1,825,173
+  deaths_high_os              1,825,173
+  deaths_high_total           1,825,173
+  deaths_civilians_sb         1,825,173
+  deaths_civilians_ns         1,825,173
+  deaths_civilians_os         1,825,173
+  deaths_civilians_total      1,825,173
+  precip_mm                   1,587,484
+  yield_maize                   751,744
+  yield_rice                    532,261
+  yield_wheat                   623,343
+  yield_soybean                 280,354
+  income_group                1,825,099
+  income_group_carried        1,825,173
+  cropland_ha                 1,511,820
+  price_shock_coverage        1,511,820
+  price_shock                 1,511,820
+
+income join:
+  carried-forward district-years: 51,076
+  iso3 never in OGHIST: ['ATA', 'VAT']
+  districts with unmatched iso3: 2
+    ATA: 1 district(s)
+    VAT: 1 district(s)
+
+crosswalk / crop coverage:
+  mapped crops: 18 / 46
+  global cropland share mapped: 67.86%
+  unmapped crops (28): ['bean', 'cass', 'chic', 'citr', 'cowp', 'lent', 'mill', 'ocer', 'ofib', 'onio', 'ooil', 'opul', 'orts', 'pige', 'plnt', 'pmil', 'pota', 'rape', 'rest', 'sesa', 'sugb', 'sunf', 'swpo', 'temf', 'toma', 'trof', 'vege', 'yams']
+
+price_shock distribution (non-null):
+  n      1,511,820
+  mean   0.003412
+  std    0.100802
+  min    -0.550307
+  p5     -0.156701
+  p50    0.000000
+  p95    0.175949
+  max    0.848363
+
+price_shock_coverage distribution (non-null):
+  n      1,511,820
+  mean   0.652041
+  p5     0.123633
+  p50    0.687831
+  p95    0.991191
+
+OK

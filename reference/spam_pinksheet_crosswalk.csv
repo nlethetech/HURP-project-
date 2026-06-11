@@ -1,0 +1,19 @@
+spam_crop,spam_crop_name,pink_code,pink_name,note
+maiz,Maize,maize,Maize,Direct 1:1; Pink Sheet maize is US No.2 yellow Gulf grain price.
+whea,Wheat,wheat_us_hrw,"Wheat, US HRW",US Hard Red Winter is the standard global wheat benchmark (Kansas City); US SRW left aside as the secondary contract.
+rice,Rice,rice_thai_5,"Rice, Thai 5%",Thai white rice 5% broken is the standard global rice benchmark; Thai 25%/A.1 and Vietnamese 5% left aside.
+soyb,Soybean,soybeans,Soybeans,Direct 1:1; whole-bean price chosen over the soybean_oil and soybean_meal derivatives.
+coff,Arabic Coffee,coffee_arabica,"Coffee, Arabica",SPAM splits coffee into arabica (coff) and robusta (rcof); arabica maps to the arabica (ICO/Other Milds) benchmark.
+rcof,Robust Coffee,coffee_robusta,"Coffee, Robusta",Robusta SPAM crop maps to the robusta benchmark.
+coco,Cocoa,cocoa,Cocoa,Direct 1:1; ICCO cocoa bean price.
+teas,Tea,tea_avg_3_auctions,"Tea, avg 3 auctions",Composite average of Colombo/Kolkata/Mombasa auctions chosen over any single-auction series.
+cott,Cotton,cotton_a_index,"Cotton, A Index",Cotlook A Index is the standard global raw-cotton lint benchmark.
+sugc,Sugarcane,sugar_world,"Sugar, world",World (ISA) raw-sugar price; EU and US protected prices left aside.
+bana,Banana,banana_us,"Banana, US",US import banana price; Europe series left aside as the secondary regional benchmark.
+oilp,Oilpalm,palm_oil,Palm oil,Oilpalm fruit maps to crude palm oil (Malaysia); palm_kernel_oil is a separate co-product left aside.
+rubb,Rubber,rubber_rss3,"Rubber, RSS3",Ribbed Smoked Sheet No.3 is the conventional natural-rubber benchmark; TSR20 block rubber left aside.
+grou,Groundnut,groundnuts,Groundnuts,Whole-nut price chosen over groundnut_oil derivative.
+sorg,Sorghum,sorghum,Sorghum,Direct 1:1; US No.2 yellow Gulf sorghum.
+barl,Barley,barley,Barley,Direct 1:1.
+toba,Tobacco,tobacco_us_import_u_v,"Tobacco, US import u.v.",Only tobacco benchmark in the Pink Sheet; US import unit value.
+cnut,Coconut,coconut_oil,Coconut oil,No raw-copra/coconut series exists; coconut oil is the closest single-commodity proxy for coconut output value.
