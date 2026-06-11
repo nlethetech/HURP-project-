@@ -72,6 +72,76 @@ The final panel is one row per admin-2 district × year: **49,329 districts × 3
 
 Raw and processed data are **not** committed to the repository (size and license restrictions); `docs/DATA_SOURCES.md` records exactly where and how each raw file was obtained so the inputs can be re-downloaded.
 
+## The panel at a glance
+
+`data/processed/panel_district_year.parquet` — one row per admin-2 district x calendar year:
+
+- **49,329 districts** (geoBoundaries CGAZ v6.0.0; 198 countries) x **37 years** (1989-2025) = **1,825,173 rows**, 35 columns, exactly one row per `(district_id, year)`.
+- Deterministic build: re-running the pipeline reproduces the file byte-for-byte.
+- Conflict columns are zero-filled (UCDP GED is globally complete for fatal organized violence, so absence = a true zero). All other gaps are honest `NaN` with the reason documented per column in `docs/CODEBOOK.md`.
+
+### All 35 columns
+
+| # | Column | Type | Unit | Non-null | Description |
+|---|--------|------|------|----------|-------------|
+| 1 | `district_id` | text | - | 1,825,173 (100%) | Admin-2 district identifier (geoBoundaries CGAZ shapeID); cross-sectional key |
+| 2 | `iso3` | text | - | 1,825,173 (100%) | ISO 3166-1 alpha-3 country code of the district |
+| 3 | `district_name` | text | - | 1,825,173 (100%) | District name as published by geoBoundaries (descriptive only) |
+| 4 | `admin_level` | text | - | 1,825,173 (100%) | Administrative level of the spine unit (ADM2; ADM1/ADM0 where no ADM2 exists) |
+| 5 | `year` | int | - | 1,825,173 (100%) | Calendar year, 1989-2025; the panel time index |
+| 6 | `n_events_sb` | int | count | 1,825,173 (100%) | Fatal state-based conflict events (UCDP type 1) |
+| 7 | `n_events_ns` | int | count | 1,825,173 (100%) | Fatal non-state conflict events (UCDP type 2) |
+| 8 | `n_events_os` | int | count | 1,825,173 (100%) | Fatal one-sided violence events (UCDP type 3) |
+| 9 | `n_events_total` | int | count | 1,825,173 (100%) | All fatal organized-violence events (sb+ns+os) |
+| 10 | `deaths_best_sb` | int | count | 1,825,173 (100%) | Best-estimate deaths, state-based |
+| 11 | `deaths_best_ns` | int | count | 1,825,173 (100%) | Best-estimate deaths, non-state |
+| 12 | `deaths_best_os` | int | count | 1,825,173 (100%) | Best-estimate deaths, one-sided |
+| 13 | `deaths_best_total` | int | count | 1,825,173 (100%) | Best-estimate deaths, all types |
+| 14 | `deaths_low_sb` | int | count | 1,825,173 (100%) | Lower-bound deaths, state-based |
+| 15 | `deaths_low_ns` | int | count | 1,825,173 (100%) | Lower-bound deaths, non-state |
+| 16 | `deaths_low_os` | int | count | 1,825,173 (100%) | Lower-bound deaths, one-sided |
+| 17 | `deaths_low_total` | int | count | 1,825,173 (100%) | Lower-bound deaths, all types |
+| 18 | `deaths_high_sb` | int | count | 1,825,173 (100%) | Upper-bound deaths, state-based |
+| 19 | `deaths_high_ns` | int | count | 1,825,173 (100%) | Upper-bound deaths, non-state |
+| 20 | `deaths_high_os` | int | count | 1,825,173 (100%) | Upper-bound deaths, one-sided |
+| 21 | `deaths_high_total` | int | count | 1,825,173 (100%) | Upper-bound deaths, all types |
+| 22 | `deaths_civilians_sb` | int | count | 1,825,173 (100%) | Civilian deaths, state-based |
+| 23 | `deaths_civilians_ns` | int | count | 1,825,173 (100%) | Civilian deaths, non-state |
+| 24 | `deaths_civilians_os` | int | count | 1,825,173 (100%) | Civilian deaths, one-sided |
+| 25 | `deaths_civilians_total` | int | count | 1,825,173 (100%) | Civilian deaths, all types |
+| 26 | `precip_mm` | float | mm/yr | 1,587,484 (87.0%) | Annual precipitation, area-weighted district mean (CHIRPS v2.0) |
+| 27 | `yield_maize` | float | t/ha | 751,744 (41.2%) | Maize yield, district zonal mean (GDHY) |
+| 28 | `yield_rice` | float | t/ha | 532,261 (29.2%) | Rice yield, district zonal mean (GDHY) |
+| 29 | `yield_wheat` | float | t/ha | 623,343 (34.2%) | Wheat yield, district zonal mean (GDHY) |
+| 30 | `yield_soybean` | float | t/ha | 280,354 (15.4%) | Soybean yield, district zonal mean (GDHY) |
+| 31 | `income_group` | text | - | 1,825,099 (100.0%) | World Bank income classification of the country (L/LM/UM/H; NA = unclassified) |
+| 32 | `income_group_carried` | bool | - | 1,825,173 (100%) | True where income_group is carried forward past the last OGHIST data year |
+| 33 | `cropland_ha` | float | ha | 1,511,820 (82.8%) | District total harvested area, all 46 SPAM crops (time-invariant) |
+| 34 | `price_shock_coverage` | float | 0-1 | 1,511,820 (82.8%) | Share of district cropland in crops mapped to a world price series (time-invariant) |
+| 35 | `price_shock` | float | dlog | 1,511,820 (82.8%) | Shift-share producer-price shock: sum of crop shares x dlog real world price |
+
+Full definitions, units, sources, and construction notes (filters, fills, crosswalk) for every column are in [`docs/CODEBOOK.md`](docs/CODEBOOK.md).
+
+### What the rows look like
+
+Maiduguri, Nigeria (Borno State, the Boko Haram epicenter) across selected years - the insurgency's 2009 outbreak and 2014-15 peak emerge directly from the spatial join of UCDP events, with Sahel rainfall, maize yields, income reclassification, and world-price shocks alongside (selected columns; the file has all 35):
+
+| district_id | iso3 | district_name | year | n_events_total | deaths_best_total | deaths_civilians_total | precip_mm | yield_maize | income_group | cropland_ha | price_shock_coverage | price_shock |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 59680162B20780696540875 | NGA | Maiduguri | 1995 | 0 | 0 | 0 | 605.3 | 0.47 | L | 8,980 | 0.495 | 0.016 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2005 | 0 | 0 | 0 | 571.5 | 0.82 | L | 8,980 | 0.495 | -0.042 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2009 | 5 | 293 | 0 | 512.8 | 0.7 | LM | 8,980 | 0.495 | -0.101 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2014 | 13 | 918 | 198 | 459.6 | 0.51 | LM | 8,980 | 0.495 | -0.085 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2015 | 43 | 1220 | 638 | 615.6 | 0.77 | LM | 8,980 | 0.495 | 0.016 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2020 | 5 | 27 | 27 | 699.7 |  | LM | 8,980 | 0.495 | 0.055 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2024 | 0 | 0 | 0 | 860.0 |  | LM | 8,980 | 0.495 | -0.03 |
+
+Aggregation: country-level series are obtained by grouping on `iso3 x year` (sums for counts/areas, cropland-weighted means for yields, rainfall and the price shock); `data/interim/faostat_qcl.parquet` additionally provides the official country-year production backbone, 1961-2024.
+
+### Validation
+
+`reports/validation_report.md` records 26 automated checks, all passing - structural integrity, exact reconciliation against every interim layer, and external cross-checks against published figures (UCDP global fatality totals, FAO 2020 production, climate references, World Bank income-group counts), each cited by URL. `src/merge/02_validate_panel.py` re-runs them and exits nonzero on any failure.
+
 ## Documentation rules
 
 - Every new data source gets an entry in `docs/DATA_SOURCES.md` **before** its acquisition script is merged.
