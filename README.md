@@ -173,7 +173,21 @@ Maiduguri, Nigeria (Borno State, the Boko Haram epicenter) across selected years
 | 59680162B20780696540875 | NGA | Maiduguri | 2020 | 5 | 27 | 27 | 699.7 |  | LM | 8,980 | 0.495 | 0.055 |
 | 59680162B20780696540875 | NGA | Maiduguri | 2024 | 0 | 0 | 0 | 860.0 |  | LM | 8,980 | 0.495 | -0.03 |
 
-Aggregation: country-level series are obtained by grouping on `iso3 x year` (sums for counts/areas, cropland-weighted means for yields, rainfall and the price shock); `data/interim/faostat_qcl.parquet` additionally provides the official country-year production backbone, 1961-2024.
+The same district-years through the **v0.2 enrichment** columns — ACLED's wider unrest (blank before Nigeria's 1997 ACLED coverage start; note violence-against-civilians tracking the Boko Haram atrocities), and the World Bank socioeconomic drivers (unemployment climbing into 2020, inflation spiking in 2024):
+
+| district_id | iso3 | district_name | year | acled_events_total | acled_protests | acled_riots | acled_vac | coups_total | wb_unemployment | wb_gdp_pc | wb_inflation |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 59680162B20780696540875 | NGA | Maiduguri | 1995 |  |  |  |  | 0 | 4.2 | 1395 | 72.8 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2005 | 1 | 0 | 0 | 0 | 0 | 3.7 | 1889 | 17.9 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2009 | 14 | 1 | 1 | 4 | 0 | 3.8 | 2205 | 12.5 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2014 | 30 | 4 | 3 | 5 | 0 | 3.9 | 2584 | 8.0 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2015 | 51 | 2 | 2 | 6 | 0 | 4.1 | 2586 | 9.0 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2020 | 41 | 3 | 0 | 12 | 0 | 5.7 | 2229 | 13.2 |
+| 59680162B20780696540875 | NGA | Maiduguri | 2024 | 28 | 9 | 5 | 4 | 0 | 3.0 | 2325 | 33.2 |
+
+(`acled_*` blanks before 1997 = outside ACLED's coverage window, *not* zero — see the codebook. The file has all **61** columns.)
+
+Aggregation: country-level series are obtained by grouping on `iso3 x year` (sums for counts/areas, cropland-weighted means for yields, rainfall and the price shock; national `wb_*`/income/coup series taken once per country-year); `data/interim/faostat_qcl.parquet` additionally provides the official country-year production backbone, 1961-2024. A ready-to-run analysis notebook is in [`notebooks/hurp_analysis_colab.ipynb`](notebooks/hurp_analysis_colab.ipynb), and shareable CSV exports (Colab-friendly) are in [`data/published/`](data/published/).
 
 ### Validation
 
