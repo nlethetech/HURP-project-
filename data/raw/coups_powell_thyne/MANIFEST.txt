@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256	dataset_version
+powell_thyne_ccode_year.txt	https://www.uky.edu/~clthyn2/coup_data/powell_thyne_ccode_year.txt	2026-06-15T17:17:52Z	708318	b19c175420a6c052499783c9e50d0a908828ea444ec43ed83e4da62bc684eb23	V2026.01.13

@@ -2,7 +2,7 @@ PANEL BUILD REPORT
 ==================
 output: data/processed/panel_district_year.parquet
 rows:   1,825,173
-cols:   35
+cols:   61
 
 column list (in order):
   district_id  [str]
@@ -30,6 +30,32 @@ column list (in order):
   deaths_civilians_ns  [int64]
   deaths_civilians_os  [int64]
   deaths_civilians_total  [int64]
+  coups_total  [int64]
+  coups_successful  [int64]
+  coups_failed  [int64]
+  acled_events_total  [float64]
+  acled_events_battles  [float64]
+  acled_events_protests  [float64]
+  acled_events_riots  [float64]
+  acled_events_vac  [float64]
+  acled_events_explosions  [float64]
+  acled_events_strategic  [float64]
+  acled_fatalities  [float64]
+  wb_unemployment  [float64]
+  wb_unemployment_youth  [float64]
+  wb_gdp_pc  [float64]
+  wb_gdp_growth  [float64]
+  wb_inflation  [float64]
+  wb_population  [float64]
+  wb_pop_growth  [float64]
+  wb_pop_0_14  [float64]
+  wb_urban_pct  [float64]
+  wb_ag_valueadd_pct  [float64]
+  wb_ag_employment_pct  [float64]
+  wb_ag_land_pct  [float64]
+  wb_cereal_yield  [float64]
+  wb_food_prod_index  [float64]
+  wb_arable_land_pct  [float64]
   precip_mm  [float64]
   yield_maize  [float64]
   yield_rice  [float64]
@@ -67,6 +93,32 @@ non-null counts per column:
   deaths_civilians_ns         1,825,173
   deaths_civilians_os         1,825,173
   deaths_civilians_total      1,825,173
+  coups_total                 1,825,173
+  coups_successful            1,825,173
+  coups_failed                1,825,173
+  acled_events_total            510,836
+  acled_events_battles          510,836
+  acled_events_protests         510,836
+  acled_events_riots            510,836
+  acled_events_vac              510,836
+  acled_events_explosions       510,836
+  acled_events_strategic        510,836
+  acled_fatalities              510,836
+  wb_unemployment             1,700,314
+  wb_unemployment_youth       1,700,314
+  wb_gdp_pc                   1,736,878
+  wb_gdp_growth               1,727,677
+  wb_inflation                1,643,068
+  wb_population               1,762,524
+  wb_pop_growth               1,762,428
+  wb_pop_0_14                 1,762,524
+  wb_urban_pct                1,762,524
+  wb_ag_valueadd_pct          1,631,796
+  wb_ag_employment_pct        1,700,314
+  wb_ag_land_pct              1,684,011
+  wb_cereal_yield             1,677,221
+  wb_food_prod_index          1,631,513
+  wb_arable_land_pct          1,683,101
   precip_mm                   1,587,484
   yield_maize                   751,744
   yield_rice                    532,261

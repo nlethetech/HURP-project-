@@ -80,7 +80,32 @@ Template for new entries:
   6. Schema churn: inter1/inter2/interaction switched numeric→text on 26 Sept 2024 (`inter_num=1` restores numeric); new data structure/conflict categories arrived with the 2025 relaunch (https://acleddata.com/faq-codebook-tools).
   7. Reporting intensity varies across countries/years — ACLED cautions against raw cross-country count comparisons; fatality figures are estimates.
   8. Redistribution of raw data in a public repo is prohibited; even derived panels are a license gray area.
-- **Facts verified**: 2026-06-11 (live re-fetch of provider pages)
+- **Implementation (verified live 2026-06-15)**: OAuth2 password grant confirmed working from a university account (`furman.edu`) — POST `https://acleddata.com/oauth/token` (username/password/grant_type=password/client_id=acled/scope=authenticated) → 24h `access_token`; `Authorization: Bearer` on `GET https://acleddata.com/api/acled/read`. Verified: `page` is 1-based with disjoint pages; default/max page size 5000; `fields=` is pipe-delimited; `event_date=A|B` + `event_date_where=BETWEEN`; `iso` numeric filter works; 1997 returns Africa-only (confirms staggered coverage). The pipeline (`src/acquisition/10_download_acled.py`) pulls GLOBALLY year-by-year (resumable, token-cached, retry/backoff), keeping 17 fields; the cleaner (`src/cleaning/10_acled.py`) keeps `geo_precision ∈ {1,2}`, spatial-joins to the spine, and aggregates to district-year by the six `event_type`s. Coverage mask at merge: zero-fill within each country's observed ACLED span, NaN outside (not-covered) — the observed first-event year tracks ACLED's published staggered start schedule (Africa 1997; Middle East 2016; S/SE Asia mixed 2010–2018; Europe/Latin America 2018; US 2020; Oceania 2021; exceptions incl. India 2016, Indonesia 2015, South Sudan 2011, Afghanistan/Syria 2017).
+- **Facts verified**: 2026-06-11 (live re-fetch of provider pages); 2026-06-15 (live OAuth + read-API verification, this build)
+
+
+### Powell & Thyne — Global Instances of Coups, 1950–present (Coup d'état Dataset)
+- **Provider**: Jonathan M. Powell (University of Central Florida) & Clayton L. Thyne (University of Kentucky). Project pages: https://www.jonathanmpowell.com/coups/ and Thyne's data mirror at uky.edu.
+- **Role in panel**: Political-instability layer complementing UCDP GED — country-year counts of coup d'état attempts (successful vs failed), broadcast onto every district in the country (admin-0 covariate). Captures elite/military seizures of executive power, which UCDP GED (fatal-event geocoding) does not isolate.
+- **Homepage**: https://www.jonathanmpowell.com/coups/
+- **Download / API**: Single tab-separated text file, no auth: `https://www.uky.edu/~clthyn2/coup_data/powell_thyne_ccode_year.txt` (country-year format; ~708 KB; 12,384 data rows). A by-event ("coup-list") file also exists at the same directory; the panel uses the country-year file. (The `http://` form 301-redirects to `https://`.)
+- **Coverage**: 1950–2025, annual, global (all sovereign states; one row per state-year). Living dataset, updated as coups occur — current snapshot is `version` string **V2026.01.13**. The companion JPR article documented 1950–2010; the live file extends to the present.
+- **Spatial detail**: Country level (admin-0). No subnational content. Keyed by Correlates-of-War country code (`ccode`); also carries `ccode_gw` (Gleditsch-Ward, frequently blank), `ccode_polity`, a COW `abbrev`, and a full `country` name string.
+- **Access method**: Anonymous HTTPS GET of one .txt; fully scriptable, no registration. Columns (tab-separated, quoted strings): `ccode`, `abbrev`, `country`, `year`, `ccode_gw`, `ccode_polity`, `coup1`–`coup4`, `date1`–`date4`, `version`. Each `coupN` cell codes one coup event that year: **2 = successful coup, 1 = failed/attempted coup, 0 = none**; up to four events per country-year. `dateN` gives each event's date.
+- **License**: No explicit license statement on the project pages; distributed freely for academic use with a request to cite the JPR article and contact the authors with corrections. Treat as **academic-use, cite-required** — not an open CC license. Mirror the file via the acquisition script rather than asserting redistribution rights.
+- **Redistribution in public repo**: Conditional / cautious. No open-license grant, so do **not** commit the raw file; ship the acquisition script + this registry entry so a third party re-obtains the identical file (consistent with the project's no-license-no-commit rule). Derived country-year coup counts are a transformation but, absent an explicit license, keep the layer download-on-build.
+- **Required citation**: Powell, Jonathan M. & Clayton L. Thyne (2011) "Global instances of coups from 1950 to present: A new dataset", *Journal of Peace Research* 48(2): 249–259. https://doi.org/10.1177/0022343310397436. State the accessed `version` string (V2026.01.13).
+- **Fit notes**:
+  - Country-year layer: parse `coup1`–`coup4`, count nonzero cells per state-year as `coups_total`, cells == 2 as `coups_successful`, cells == 1 as `coups_failed`. Join onto the spine by **ISO3 + year** and zero-fill the panel window (the file is globally complete over 1950–present, so an unlisted state-year is a true zero, exactly like UCDP GED).
+  - Key mapping: the file has no ISO3 column. Map the `country` name string → ISO3 with `country_converter` (regex matcher), NOT the COW `ccode` (country_converter has no COW class) and NOT `abbrev` (COW abbreviations differ from ISO3: BFO=Burkina Faso, CDI=Côte d'Ivoire, UKG=United Kingdom, etc.).
+  - Coverage 1950–2025 spans the full panel window 1989–2025; no end-year trimming needed.
+- **Gotchas**:
+  1. COW `abbrev` ≠ ISO3 and COW `ccode` is unsupported by country_converter — map on the `country` name string and hard-guard that every in-window coup event resolves to a valid ISO3.
+  2. Historical/non-sovereign entities in the file do not map to a modern ISO3: "Vietnam, Republic of" (South Vietnam, ended 1975), "German Democratic Republic"/"German Federal Republic" (pre-1990), "Yugoslavia", "Zanzibar", "Tibet", "Abkhazia", "South Ossetia". All 1989–2025 coup events fall on mapped states (the sole unmapped coup-country, South Vietnam, predates the panel); these names are dropped with logging via an explicit, documented override set.
+  3. Living file with no versioned archive — record the `version` cell and the retrieval date/checksum in MANIFEST; counts for recent years can be revised in later snapshots.
+  4. Counts coups, not deaths — a bloodless palace coup and a violent one both score one event; pair with UCDP GED for fatality intensity.
+  5. Quoted string fields (`"USA"`, `"United States of America"`, `"V2026.01.13"`) — strip surrounding quotes on parse.
+- **Facts verified**: 2026-06-15 (live download of the country-year file; format, version V2026.01.13, and 1950–2025 coverage confirmed directly)
 
 
 ## Panel spine: administrative boundaries
@@ -144,6 +169,43 @@ Template for new entries:
   8. The DDH resource ID (DR0095334) is a catalog artifact and may change in catalog migrations (an older duplicate ID DR0090754 still appears in DatasetView responses); keep the Help Desk article as discovery fallback and pin a repo copy.
   9. No official machine-readable (CSV/API) historical table exists: WB API v2 incomeLevel returns only the single current classification, and the catalog companion DR0094546 ("Historical classification by income, lending, and fragile status", CLASS_hist.xlsx) is still Excel — the XLSX is the only official historical source.
 - **Facts verified**: 2026-06-11 (live re-fetch of provider pages)
+
+
+### World Bank World Development Indicators (WDI) — socioeconomic & agricultural covariates
+- **Provider**: World Bank, Development Data Group (World Development Indicators). Several series are sourced by the WB from ILO (unemployment/employment, modelled estimates) and FAO (agricultural land/yield/food index).
+- **Role in panel**: Country-year socioeconomic and agricultural covariates that the conflict and agricultural-production literature uses as explanators/controls — unemployment (incl. youth), GDP per capita and growth, inflation, population and age structure, urbanization, agricultural value-added/employment/land/yield/food-production. Broadcast onto every district by ISO3 + year (like income class and coups).
+- **Homepage**: https://data.worldbank.org/ (indicator pages e.g. https://data.worldbank.org/indicator/SL.UEM.TOTL.ZS)
+- **Download / API**: WB Indicators REST API v2, no auth: `https://api.worldbank.org/v2/country/all/indicator/{CODE}?format=json&per_page=20000&date=1989:2025`. Returns `[meta, [rows]]`; each row has `countryiso3code`, `date` (year), `value`, and the indicator name. `per_page` large enough returns all rows in one page (≈266 economies × 37 years ≈ 9.8k rows < 20000); `meta.pages`/`meta.total` confirm. Also offers CSV/XML bulk and per-country queries. (Verified live 2026-06-15: SL.UEM.TOTL.ZS and NY.GDP.PCAP.KD return HTTP 200, total=266 for 2020.)
+- **Curated indicator set (code → panel column)**:
+  - `SL.UEM.TOTL.ZS` → `wb_unemployment` — Unemployment, total (% labor force, modelled ILO)
+  - `SL.UEM.1524.ZS` → `wb_unemployment_youth` — Unemployment, youth 15–24 (% — youth-bulge conflict predictor)
+  - `NY.GDP.PCAP.KD` → `wb_gdp_pc` — GDP per capita (constant 2015 US$; classic conflict predictor, Fearon-Laitin / Collier-Hoeffler)
+  - `NY.GDP.MKTP.KD.ZG` → `wb_gdp_growth` — GDP growth (annual %)
+  - `FP.CPI.TOTL.ZG` → `wb_inflation` — Inflation, consumer prices (annual %)
+  - `SP.POP.TOTL` → `wb_population` — Population, total
+  - `SP.POP.GROW` → `wb_pop_growth` — Population growth (annual %)
+  - `SP.POP.0014.TO.ZS` → `wb_pop_0_14` — Population ages 0–14 (% of total; youth bulge)
+  - `SP.URB.TOTL.IN.ZS` → `wb_urban_pct` — Urban population (% of total)
+  - `NV.AGR.TOTL.ZS` → `wb_ag_valueadd_pct` — Agriculture/forestry/fishing value added (% GDP)
+  - `SL.AGR.EMPL.ZS` → `wb_ag_employment_pct` — Employment in agriculture (% of employment, modelled ILO)
+  - `AG.LND.AGRI.ZS` → `wb_ag_land_pct` — Agricultural land (% of land area)
+  - `AG.YLD.CREL.KG` → `wb_cereal_yield` — Cereal yield (kg/ha)
+  - `AG.PRD.FOOD.XD` → `wb_food_prod_index` — Food production index (2014–2016 = 100)
+  - `AG.LND.ARBL.ZS` → `wb_arable_land_pct` — Arable land (% of land area)
+- **Coverage**: country-year; series start years vary by indicator (most 1960/1990+; modelled ILO series ~1991+). Updated continuously; recent 1–2 years are often missing (reporting lag). `country/all` includes regional aggregates (e.g. WLD, ARB) which simply do not join to spine ISO3 and are harmless.
+- **Spatial detail**: National (admin-0). `countryiso3code` is ISO 3166-1 alpha-3 (joins directly to the spine `iso3`; aggregates carry non-country codes that do not match).
+- **Access method**: Anonymous HTTPS GET per indicator; fully scriptable, no key. JSON `[meta, rows]`; parse `countryiso3code`, `date`, `value`; pivot to wide (iso3, year) × indicator.
+- **License**: CC BY 4.0 (World Bank Terms of Use; data "free to copy, distribute, adapt" with attribution). **Redistributable** — derived country-year tables may be committed with WB attribution. ILO/FAO-sourced series carry the WB CC BY 4.0 framing.
+- **Redistribution in public repo**: Yes — CC BY 4.0; commit derived `wb_*` columns with "World Bank, World Development Indicators" attribution (and note ILO/FAO origin for the relevant series). Raw JSON is download-on-build (data/raw gitignored).
+- **Required citation**: World Bank. World Development Indicators. Washington, DC: World Bank. https://data.worldbank.org/. Licence: CC BY 4.0. (For ILO-sourced series add: International Labour Organization, ILOSTAT modelled estimates; for FAO-sourced: FAO.)
+- **Fit notes**: Left-join by (iso3, year); **not zero-filled** (continuous measures — absence is missing data, NaN, not zero). The recent-year reporting lag means 2024–2025 are largely NaN for many indicators; documented in the codebook. Each indicator is validated at download time (HTTP 200 + non-empty `total`) so a renamed/retired code fails loudly.
+- **Gotchas**:
+  1. `country/all` mixes economies and regional aggregates — keep only rows whose `countryiso3code` matches a spine ISO3 (aggregates harmlessly fail to join).
+  2. `value` is null for missing observations and the JSON `date` is a string year — coerce types and drop nulls.
+  3. Indicator codes occasionally change/retire across WDI vintages — pin the code list and assert each returns data.
+  4. Some series (poverty, youth unemployment) are sparse for conflict-affected countries — expect high NaN density there; do not impute silently.
+  5. Modelled ILO unemployment/employment are estimates, not survey counts — fine as covariates, flag as modelled.
+- **Facts verified**: 2026-06-15 (live API check: WDI v2 endpoint, two indicator codes, JSON shape)
 
 
 ## Agricultural output

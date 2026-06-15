@@ -4,7 +4,7 @@ Definition of every variable in `data/processed/panel_district_year.parquet`,
 the district-year analysis panel built by `src/merge/01_build_panel.py`.
 
 - **Unit of analysis**: admin-2 district × calendar year.
-- **Shape**: 49,329 districts × 37 years (1989–2025) = **1,825,173 rows**, 35
+- **Shape**: 49,329 districts × 37 years (1989–2025) = **1,825,173 rows**, 61
   columns. Exactly one row per `(district_id, year)` (asserted at build time).
 - **Spine**: geoBoundaries CGAZ v6.0.0 admin-2 polygons (time-invariant
   geometry; `district_id` = the spine shapeID).
@@ -52,6 +52,121 @@ districts. Suffixes: `sb` = state-based, `ns` = non-state, `os` = one-sided
 | `deaths_low_sb` / `_ns` / `_os` / `_total` | UCDP "low" (lower-bound) fatality estimate, summed. | deaths | UCDP GED 26.1 | Lower bound of the fatality range. Absent ⇒ 0. |
 | `deaths_high_sb` / `_ns` / `_os` / `_total` | UCDP "high" (upper-bound) fatality estimate, summed. | deaths | UCDP GED 26.1 | Upper bound of the fatality range. Absent ⇒ 0. |
 | `deaths_civilians_sb` / `_ns` / `_os` / `_total` | Civilian deaths, summed. | deaths | UCDP GED 26.1 | Civilian share of `deaths_best`. Absent ⇒ 0. |
+
+## Coups — Powell & Thyne (national covariate, zero-filled)
+
+Counts of coup d'état **attempts** per country-year, from the Powell & Thyne
+"Global Instances of Coups" file (`data/interim/coups_pt.parquet`, version
+`V2026.01.13`). This is a **national (admin-0) covariate**: the country's coup
+counts are broadcast onto **every** district in that country-year (joined on
+`iso3 + year`), exactly like `income_group`. Like UCDP GED, the source is
+globally complete for sovereign states over its window (1950–present), so a
+country-year absent from it is a true **zero** and the columns are zero-filled
+across the whole frame. Country names are mapped to `iso3` via
+`country_converter`; the cleaning step (`src/cleaning/09_coups_pt.py`) asserts
+every in-window coup event resolves to a valid ISO3. Coups are counted, not
+weighted by deaths — pair with the UCDP GED columns for fatality intensity.
+
+**Do not sum `coups_total` across districts**: because the value is replicated
+across a country's districts, the district-year sum counts each coup once per
+district, not once per event. Collapse to the country-year level first (or read
+`data/interim/coups_pt.parquet`) to recover unique events. P&T coding choices
+apply (e.g. the 1993 Russian constitutional crisis is not coded as a coup).
+
+| Variable | Definition | Unit | Source | Construction notes |
+|----------|------------|------|--------|--------------------|
+| `coups_total` | Number of coup attempts in the country that year (successful + failed). | count | Powell & Thyne (V2026.01.13) | Count of nonzero `coup1`–`coup4` cells. Broadcast to all districts of the country; absent country-year ⇒ 0. |
+| `coups_successful` | Number of **successful** coups that year. | count | Powell & Thyne (V2026.01.13) | Count of `coupN` == 2. Absent ⇒ 0. |
+| `coups_failed` | Number of **failed/attempted** coups that year. | count | Powell & Thyne (V2026.01.13) | Count of `coupN` == 1. Absent ⇒ 0. `coups_successful + coups_failed == coups_total`. |
+
+## Political violence & unrest — ACLED (coverage-masked)
+
+ACLED geolocated **events** (`data/interim/acled_district_year.parquet`),
+spatially joined to the spine and aggregated to district-year by `event_type`.
+ACLED **extends UCDP GED**: where UCDP records only fatal organized violence,
+ACLED also captures **non-lethal** unrest — protests, riots, and violence
+against civilians that caused no deaths — so these columns surface political
+disorder that is invisible in the UCDP layer. Events are kept at
+`geo_precision ∈ {1,2}` (exact / near-exact coordinates); `geo_precision = 3`
+(region-centroid only) is dropped before the join so it cannot fabricate
+concentration in centroid districts. All columns are **float64**.
+
+**Coverage mask — the critical difference from UCDP.** ACLED's geographic
+coverage starts in different years by region (1997 Africa-only; Middle East
+~2016; South/South-East Asia mixed 2010–2018; Europe & Latin America ~2018;
+United States 2020; Oceania 2021; with country exceptions such as India 2016,
+Indonesia 2015, South Sudan 2011, Afghanistan/Syria 2017). So these columns are
+**NOT** blanket zero-filled. For each district-year:
+
+- **value** = observed event count, where ACLED matched;
+- **0.0** = the country-year is **inside** that country's observed ACLED window
+  (`year` between the country's **first** and **last** ACLED data year) but had
+  no matching event — a *true zero*;
+- **NaN** = the country-year is **outside** that window (before the country
+  entered ACLED, or after its last observed year, or a country ACLED does not
+  cover) — *not observed*, **not** zero.
+
+The per-country window is the **first..last year ACLED records events under
+that country's own ISO code** (ACLED's `iso` field, mapped to ISO3 — *not* the
+spine's geographic assignment). Deriving coverage from ACLED's own country
+coding is essential: otherwise a handful of border/disputed-territory events
+(e.g. a 2010 Kashmir event ACLED codes as Pakistan but whose coordinates sit
+inside India's polygon) would make a country look "covered" years before ACLED
+began monitoring it. These windows match ACLED's published staggered-coverage
+schedule (Nigeria 1997, South Sudan 2011, Indonesia 2015, India 2016, Syria
+2017, Ukraine 2018, USA 2020; cross-referenced in `docs/DATA_SOURCES.md`,
+"ACLED"). A district-year is **non-NaN iff it has a matched event OR falls in
+its country's window** — so a genuine cross-border event keeps its real count
+even outside the window, but interior districts before a country's start stay
+`NaN`. Using each country's *own* last year (not a global maximum) also avoids
+trailing-edge false zeros from the reporting lag. Treat `NaN` as
+missing-by-coverage; do not coerce it to 0. ACLED's raw data is **not
+redistributable** (EULA), so `data/raw/acled/` is gitignored — re-pull with your
+own credentials.
+
+| Variable | Definition | Unit | Source | Construction notes |
+|----------|------------|------|--------|--------------------|
+| `acled_events_total` | All ACLED events in the district-year (sum of the six type columns). | count | ACLED | Coverage-masked (see above). NaN ⇒ not covered. |
+| `acled_events_battles` | `event_type` = Battles. | count | ACLED | Armed clashes between organized groups. |
+| `acled_events_protests` | `event_type` = Protests. | count | ACLED | Non-violent demonstrations. **Absent from UCDP.** |
+| `acled_events_riots` | `event_type` = Riots. | count | ACLED | Violent demonstrations / mob violence. **Absent from UCDP.** |
+| `acled_events_vac` | `event_type` = Violence against civilians. | count | ACLED | Incl. non-lethal attacks UCDP omits. |
+| `acled_events_explosions` | `event_type` = Explosions/Remote violence. | count | ACLED | Shelling, IEDs, air/drone strikes. |
+| `acled_events_strategic` | `event_type` = Strategic developments. | count | ACLED | Non-violent but significant (arrests, looting, agreements). |
+| `acled_fatalities` | Sum of ACLED `fatalities` over matched events. | deaths | ACLED | ACLED fatality estimates (conservative; differ from UCDP). |
+
+## Socioeconomic & agricultural covariates — World Bank WDI (not filled)
+
+National (admin-0) covariates from the World Bank World Development Indicators
+(`data/interim/wb_wdi.parquet`), joined by `iso3 + year` and broadcast onto
+every district of a country-year (like `income_group` and the coup columns).
+These are the variables the conflict and agricultural-production literature uses
+to **explain** violence and output — unemployment, income, growth, inflation,
+demography, urbanization, and the agricultural economy. All are **float64** and
+**not filled**: `NaN` means the World Bank has no observation for that
+country-year — *not* zero (these are continuous measures). Coverage varies by
+indicator and the WB reporting lag leaves **2024–2025 largely NaN** for many
+series; treat `NaN` as missing, never impute silently. Licence: CC BY 4.0
+(World Bank WDI; unemployment/employment via ILO modelled estimates, several
+agricultural series via FAO) — redistributable with attribution.
+
+| Variable | Definition | Unit | WDI code |
+|----------|------------|------|----------|
+| `wb_unemployment` | Unemployment, total (% of total labor force, modelled ILO). | % | SL.UEM.TOTL.ZS |
+| `wb_unemployment_youth` | Unemployment, ages 15–24 (% — youth-bulge predictor). | % | SL.UEM.1524.ZS |
+| `wb_gdp_pc` | GDP per capita (constant 2015 US$). | US$ | NY.GDP.PCAP.KD |
+| `wb_gdp_growth` | GDP growth (annual %). | % | NY.GDP.MKTP.KD.ZG |
+| `wb_inflation` | Inflation, consumer prices (annual %). | % | FP.CPI.TOTL.ZG |
+| `wb_population` | Population, total. | persons | SP.POP.TOTL |
+| `wb_pop_growth` | Population growth (annual %). | % | SP.POP.GROW |
+| `wb_pop_0_14` | Population ages 0–14 (% of total; youth bulge). | % | SP.POP.0014.TO.ZS |
+| `wb_urban_pct` | Urban population (% of total). | % | SP.URB.TOTL.IN.ZS |
+| `wb_ag_valueadd_pct` | Agriculture, forestry & fishing, value added (% of GDP). | % | NV.AGR.TOTL.ZS |
+| `wb_ag_employment_pct` | Employment in agriculture (% of total employment, modelled ILO). | % | SL.AGR.EMPL.ZS |
+| `wb_ag_land_pct` | Agricultural land (% of land area). | % | AG.LND.AGRI.ZS |
+| `wb_cereal_yield` | Cereal yield. | kg/ha | AG.YLD.CREL.KG |
+| `wb_food_prod_index` | Food production index (2014–2016 = 100). | index | AG.PRD.FOOD.XD |
+| `wb_arable_land_pct` | Arable land (% of land area). | % | AG.LND.ARBL.ZS |
 
 ## Weather — CHIRPS v2.0 (not filled)
 

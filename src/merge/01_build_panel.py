@@ -31,6 +31,19 @@ Inputs
     data/interim/income_class.parquet
         World Bank OGHIST income groups, one row per (iso3, fiscal_year):
         data_year, income_group (L/LM/UM/H/NA), raw_code.
+    data/interim/coups_pt.parquet
+        Powell & Thyne coup counts, one row per (iso3, year) with >=1 event:
+        coups_total, coups_successful, coups_failed (national covariate).
+    data/interim/acled_district_year.parquet
+        ACLED events per (district_id, iso3, year): acled_events_total + per
+        event-type counts (battles/protests/riots/vac/explosions/strategic) +
+        acled_fatalities. Coverage-masked at merge time.
+    data/interim/acled_coverage.parquet
+        Per-iso3 observed ACLED span (acled_first_year, acled_last_year) used
+        to build the coverage mask (zero-fill vs NaN).
+    data/interim/wb_wdi.parquet
+        World Bank WDI socioeconomic/agricultural covariates per (iso3, year):
+        15 wb_* columns (unemployment, gdp_pc, inflation, population, ag, ...).
     data/interim/cropmix_spam2020.parquet
         SPAM 2020 v2.0 R2 district crop mix: crop ("<code> <name>"),
         harv_area_ha, crop_share (time-invariant).
@@ -114,8 +127,34 @@ CONFLICT = INTERIM / "conflict_ged.parquet"
 WEATHER = INTERIM / "weather_chirps.parquet"
 YIELDS = INTERIM / "ag_yields_gdhy.parquet"
 INCOME = INTERIM / "income_class.parquet"
+COUPS = INTERIM / "coups_pt.parquet"
+ACLED = INTERIM / "acled_district_year.parquet"
+ACLED_COVERAGE = INTERIM / "acled_coverage.parquet"
+WDI = INTERIM / "wb_wdi.parquet"
 CROPMIX = INTERIM / "cropmix_spam2020.parquet"
 PRICES = INTERIM / "prices_pinksheet.parquet"
+
+# Powell & Thyne coup-count columns (national covariate, zero-filled).
+COUPS_COLS = ["coups_total", "coups_successful", "coups_failed"]
+
+# ACLED district-year columns (coverage-masked: 0 where covered-but-no-event,
+# NaN where the country-year is OUTSIDE ACLED's staggered coverage window).
+ACLED_COLS = [
+    "acled_events_total",
+    "acled_events_battles", "acled_events_protests", "acled_events_riots",
+    "acled_events_vac", "acled_events_explosions", "acled_events_strategic",
+    "acled_fatalities",
+]
+
+# World Bank WDI socioeconomic/agricultural covariates (national, NOT filled:
+# NaN = no WB observation, since these are continuous measures).
+WDI_COLS = [
+    "wb_unemployment", "wb_unemployment_youth", "wb_gdp_pc", "wb_gdp_growth",
+    "wb_inflation", "wb_population", "wb_pop_growth", "wb_pop_0_14",
+    "wb_urban_pct", "wb_ag_valueadd_pct", "wb_ag_employment_pct",
+    "wb_ag_land_pct", "wb_cereal_yield", "wb_food_prod_index",
+    "wb_arable_land_pct",
+]
 CROSSWALK = REFERENCE / "spam_pinksheet_crosswalk.csv"
 
 OUT_PANEL = REPO_ROOT / "data" / "processed" / "panel_district_year.parquet"
@@ -204,6 +243,133 @@ def join_conflict(frame: pd.DataFrame) -> pd.DataFrame:
         f"zero-filled {len(out) - n_matched:,} (true zeros)"
     )
     return out, conflict_cols
+
+
+def join_coups(frame: pd.DataFrame) -> tuple[pd.DataFrame, list]:
+    """Left-join Powell & Thyne coup counts on (iso3, year); zero-fill.
+
+    The dataset is globally complete for sovereign states 1950-present, so a
+    country-year absent from it had zero coups -- a true zero, like UCDP GED.
+    Coups are a NATIONAL (admin-0) covariate: every district in a country-year
+    receives that country's coup counts (broadcast on iso3, like income_group).
+    """
+    cp = pd.read_parquet(COUPS)
+    cp["year"] = cp["year"].astype("int64")
+    missing = set(COUPS_COLS) - set(cp.columns)
+    if missing:
+        raise ValueError(f"Coups layer missing columns: {sorted(missing)}")
+    if cp.duplicated(["iso3", "year"]).any():
+        raise AssertionError("Coups layer has duplicate (iso3, year) rows.")
+
+    # Each frame row matches at most one coup country-year -> many-to-one.
+    out = frame.merge(
+        cp[["iso3", "year", *COUPS_COLS]],
+        on=["iso3", "year"],
+        how="left",
+        validate="m:1",
+    )
+    n_matched = int(out["coups_total"].notna().sum())
+    out[COUPS_COLS] = out[COUPS_COLS].fillna(0).astype("int64")
+    log(
+        f"  coups: matched {n_matched:,} district-years to a coup record; "
+        f"zero-filled {len(out) - n_matched:,} (true zeros)"
+    )
+    return out, COUPS_COLS
+
+
+def join_acled(frame: pd.DataFrame) -> tuple[pd.DataFrame, list]:
+    """Left-join ACLED district-year counts, then apply the COVERAGE MASK.
+
+    ACLED coverage is region-staggered (1997 Africa-only; most of the world
+    only from 2018+), so -- unlike UCDP GED -- a blanket zero-fill would
+    fabricate "no unrest" in country-years ACLED never covered. The mask:
+
+      * a district-year that MATCHED ACLED keeps its observed counts;
+      * a district-year with NO match but INSIDE its country's coverage window
+        [acled_first_year .. acled_last_year] (per-country) is a TRUE zero -> 0.0;
+      * a district-year OUTSIDE that window (before the country entered ACLED,
+        after its last observed year, or a country ACLED does not cover at all)
+        stays NaN -- "not covered", not zero.
+
+    Columns are float64 so NaN (not-covered) and 0.0 (covered, no event) are
+    distinct. The per-country window is each country's first..last OBSERVED
+    ACLED data year -- a close, data-driven proxy for ACLED's published coverage
+    span (conservative: never fabricates a zero where there is no data).
+    """
+    acled = pd.read_parquet(ACLED)
+    cov = pd.read_parquet(ACLED_COVERAGE)
+    missing = set(ACLED_COLS) - set(acled.columns)
+    if missing:
+        raise ValueError(f"ACLED layer missing columns: {sorted(missing)}")
+    acled["year"] = acled["year"].astype("int64")
+    if acled.duplicated(["district_id", "year"]).any():
+        raise AssertionError("ACLED layer has duplicate (district_id, year).")
+
+    out = frame.merge(
+        acled[["district_id", "year", *ACLED_COLS]],
+        on=["district_id", "year"], how="left", validate="m:1",
+    )
+    matched = out["acled_events_total"].notna()
+
+    # Per-country coverage WINDOW [first .. last] from the observed ACLED span.
+    # Using each country's OWN last data year (not a single global max) avoids
+    # fabricating trailing-edge zeros for countries whose ACLED data ends before
+    # the global maximum (e.g. lag/coverage differences). A country-year past a
+    # country's last observed year stays NaN ("not observed"), never a 0.
+    out = out.merge(
+        cov[["iso3", "acled_first_year", "acled_last_year"]],
+        on="iso3", how="left", validate="m:1",
+    )
+    covered = (
+        out["acled_first_year"].notna()
+        & (out["year"] >= out["acled_first_year"])
+        & (out["year"] <= out["acled_last_year"])
+    )
+    fill_zero = covered & ~matched
+    for c in ACLED_COLS:
+        out.loc[fill_zero, c] = 0.0
+        out[c] = out[c].astype("float64")
+    out = out.drop(columns=["acled_first_year", "acled_last_year"])
+
+    n_match = int(matched.sum())
+    n_zero = int(fill_zero.sum())
+    n_nan = int(out["acled_events_total"].isna().sum())
+    n_cov_countries = int(cov["iso3"].nunique())
+    log(
+        f"  acled: matched {n_match:,} district-years; zero-filled {n_zero:,} "
+        f"(covered, no event); left NaN {n_nan:,} (outside coverage). "
+        f"Coverage: {n_cov_countries} countries (per-country observed spans)."
+    )
+    return out, ACLED_COLS
+
+
+def join_wdi(frame: pd.DataFrame) -> tuple[pd.DataFrame, list]:
+    """Left-join World Bank WDI covariates on (iso3, year); do NOT fill.
+
+    National covariates broadcast onto every district of a country-year (like
+    income_group / coups). These are continuous measures, so an absent
+    (iso3, year) is MISSING DATA -> NaN, never zero. The WB reporting lag means
+    the final 1-2 panel years are largely NaN for many indicators (documented
+    in the codebook).
+    """
+    wdi = pd.read_parquet(WDI)
+    missing = set(WDI_COLS) - set(wdi.columns)
+    if missing:
+        raise ValueError(f"WDI layer missing columns: {sorted(missing)}")
+    wdi["year"] = wdi["year"].astype("int64")
+    if wdi.duplicated(["iso3", "year"]).any():
+        raise AssertionError("WDI layer has duplicate (iso3, year) rows.")
+
+    out = frame.merge(
+        wdi[["iso3", "year", *WDI_COLS]],
+        on=["iso3", "year"], how="left", validate="m:1",
+    )
+    for c in WDI_COLS:
+        out[c] = out[c].astype("float64")
+    n_any = int(out[WDI_COLS].notna().any(axis=1).sum())
+    log(f"  wdi: matched WB covariates for {n_any:,} district-years "
+        f"(>=1 indicator non-null); {len(WDI_COLS)} indicators, not filled.")
+    return out, WDI_COLS
 
 
 def join_weather(frame: pd.DataFrame) -> pd.DataFrame:
@@ -502,6 +668,10 @@ def main() -> int:
         WEATHER,
         YIELDS,
         INCOME,
+        COUPS,
+        ACLED,
+        ACLED_COVERAGE,
+        WDI,
         CROPMIX,
         PRICES,
         CROSSWALK,
@@ -523,6 +693,15 @@ def main() -> int:
 
     log("Joining conflict (UCDP GED) ...")
     panel, conflict_cols = join_conflict(panel)
+
+    log("Joining coups (Powell & Thyne) ...")
+    panel, coups_cols = join_coups(panel)
+
+    log("Joining ACLED (coverage-masked) ...")
+    panel, acled_cols = join_acled(panel)
+
+    log("Joining WB WDI covariates ...")
+    panel, wdi_cols = join_wdi(panel)
 
     log("Joining weather (CHIRPS) ...")
     panel = join_weather(panel)
@@ -554,6 +733,9 @@ def main() -> int:
         "admin_level",
         "year",
         *conflict_cols,
+        *coups_cols,
+        *acled_cols,
+        *wdi_cols,
         "precip_mm",
         *yield_cols,
         "income_group",
@@ -588,6 +770,13 @@ def main() -> int:
     log(f"  cols:                {panel.shape[1]}")
     log(f"  districts:           {panel['district_id'].nunique():,}")
     log(f"  years:               {int(panel['year'].min())}-{int(panel['year'].max())}")
+    log(f"  coup district-years: {int((panel['coups_total'] > 0).sum()):,} "
+        f"(total events {int(panel['coups_total'].sum()):,})")
+    log(f"  acled covered d-yrs: {int(panel['acled_events_total'].notna().sum()):,} "
+        f"(events>0 in {int((panel['acled_events_total'] > 0).sum()):,}); "
+        f"not-covered NaN {int(panel['acled_events_total'].isna().sum()):,}")
+    log(f"  wdi unemployment nn: {int(panel['wb_unemployment'].notna().sum()):,}; "
+        f"gdp_pc nn: {int(panel['wb_gdp_pc'].notna().sum()):,}")
     log(f"  precip_mm non-null:  {int(panel['precip_mm'].notna().sum()):,}")
     log(f"  yield_maize nonnull: {int(panel['yield_maize'].notna().sum()):,}")
     log(f"  income non-null:     {int(panel['income_group'].notna().sum()):,}")

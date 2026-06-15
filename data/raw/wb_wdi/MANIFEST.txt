@@ -1,0 +1,16 @@
+code	column	rows	retrieved_utc	indicator_name
+SL.UEM.TOTL.ZS	wb_unemployment	9842	2026-06-15T17:56:12Z	Unemployment, total (% of total labor force) (modeled ILO estimate)
+SL.UEM.1524.ZS	wb_unemployment_youth	9842	2026-06-15T17:56:12Z	Unemployment, youth total (% of total labor force ages 15-24) (modeled ILO estimate)
+NY.GDP.PCAP.KD	wb_gdp_pc	9842	2026-06-15T17:56:12Z	GDP per capita (constant 2015 US$)
+NY.GDP.MKTP.KD.ZG	wb_gdp_growth	9842	2026-06-15T17:56:12Z	GDP growth (annual %)
+FP.CPI.TOTL.ZG	wb_inflation	9842	2026-06-15T17:56:12Z	Inflation, consumer prices (annual %)
+SP.POP.TOTL	wb_population	9842	2026-06-15T17:56:12Z	Population, total
+SP.POP.GROW	wb_pop_growth	9842	2026-06-15T17:56:12Z	Population growth (annual %)
+SP.POP.0014.TO.ZS	wb_pop_0_14	9842	2026-06-15T17:56:12Z	Population ages 0-14 (% of total population)
+SP.URB.TOTL.IN.ZS	wb_urban_pct	9842	2026-06-15T17:56:12Z	Urban population (% of total population)
+NV.AGR.TOTL.ZS	wb_ag_valueadd_pct	9842	2026-06-15T17:56:12Z	Agriculture, forestry, and fishing, value added (% of GDP)
+SL.AGR.EMPL.ZS	wb_ag_employment_pct	9842	2026-06-15T17:56:12Z	Employment in agriculture (% of total employment) (modeled ILO estimate)
+AG.LND.AGRI.ZS	wb_ag_land_pct	9842	2026-06-15T17:56:12Z	Agricultural land (% of land area)
+AG.YLD.CREL.KG	wb_cereal_yield	9842	2026-06-15T17:56:12Z	Cereal yield (kg per hectare)
+AG.PRD.FOOD.XD	wb_food_prod_index	9842	2026-06-15T17:56:12Z	Food production index (2014-2016 = 100)
+AG.LND.ARBL.ZS	wb_arable_land_pct	9842	2026-06-15T17:56:12Z	Arable land (% of land area)

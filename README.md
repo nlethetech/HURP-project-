@@ -47,6 +47,9 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
    .venv/bin/python src/acquisition/06_download_spam.py          # SPAM 2020 v2.0 R2 crop mix
    .venv/bin/python src/acquisition/07_download_gdhy.py          # GDHY v1.2/1.3 gridded yields
    .venv/bin/python src/acquisition/08_download_chirps.py        # CHIRPS v2.0 monthly precipitation
+   .venv/bin/python src/acquisition/09_download_coups_pt.py      # Powell & Thyne coups (v0.2)
+   .venv/bin/python src/acquisition/10_download_acled.py         # ACLED events (v0.2; needs ACLED_EMAIL/ACLED_PASSWORD in .env)
+   .venv/bin/python src/acquisition/11_download_wb_wdi.py        # World Bank WDI covariates (v0.2)
    ```
 
    **Cleaning** (`src/cleaning/`, one tidy table per source in `data/interim/`):
@@ -59,6 +62,9 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
    .venv/bin/python src/cleaning/06_cropmix_spam.py     # -> cropmix_spam2020.parquet
    .venv/bin/python src/cleaning/07_ag_yields_gdhy.py   # -> ag_yields_gdhy.parquet
    .venv/bin/python src/cleaning/08_weather_chirps.py   # -> weather_chirps.parquet
+   .venv/bin/python src/cleaning/09_coups_pt.py         # -> coups_pt.parquet (v0.2)
+   .venv/bin/python src/cleaning/10_acled.py            # -> acled_district_year.parquet (+ acled_coverage) (v0.2)
+   .venv/bin/python src/cleaning/11_wb_wdi.py           # -> wb_wdi.parquet (v0.2)
    ```
 
    **Merge** (`src/merge/`, joins the interim tables onto the spine × year frame):
@@ -68,7 +74,7 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
 
    The merge step also reads the committed crosswalk `reference/spam_pinksheet_crosswalk.csv` (SPAM crop → Pink Sheet commodity).
 
-The final panel is one row per admin-2 district × year: **49,329 districts × 37 years (1989–2025) = 1,825,173 rows, 35 columns**. Variable definitions are in `docs/CODEBOOK.md`.
+The final panel is one row per admin-2 district × year: **49,329 districts × 37 years (1989–2025) = 1,825,173 rows, 61 columns** (35 core + 26 v0.2 enrichment: coups, ACLED political violence/unrest, and World Bank socioeconomic & agricultural covariates). Variable definitions are in `docs/CODEBOOK.md`.
 
 Raw and processed data are **not** committed to the repository (size and license restrictions); `docs/DATA_SOURCES.md` records exactly where and how each raw file was obtained so the inputs can be re-downloaded.
 
@@ -76,11 +82,11 @@ Raw and processed data are **not** committed to the repository (size and license
 
 `data/processed/panel_district_year.parquet` — one row per admin-2 district x calendar year:
 
-- **49,329 districts** (geoBoundaries CGAZ v6.0.0; 198 countries) x **37 years** (1989-2025) = **1,825,173 rows**, 35 columns, exactly one row per `(district_id, year)`.
+- **49,329 districts** (geoBoundaries CGAZ v6.0.0; 198 countries) x **37 years** (1989-2025) = **1,825,173 rows**, 61 columns, exactly one row per `(district_id, year)`.
 - Deterministic build: re-running the pipeline reproduces the file byte-for-byte.
 - Conflict columns are zero-filled (UCDP GED is globally complete for fatal organized violence, so absence = a true zero). All other gaps are honest `NaN` with the reason documented per column in `docs/CODEBOOK.md`.
 
-### All 35 columns
+### Core columns (v0.1, 35)
 
 | # | Column | Type | Unit | Non-null | Description |
 |---|--------|------|------|----------|-------------|
@@ -120,7 +126,38 @@ Raw and processed data are **not** committed to the repository (size and license
 | 34 | `price_shock_coverage` | float | 0-1 | 1,511,820 (82.8%) | Share of district cropland in crops mapped to a world price series (time-invariant) |
 | 35 | `price_shock` | float | dlog | 1,511,820 (82.8%) | Shift-share producer-price shock: sum of crop shares x dlog real world price |
 
-Full definitions, units, sources, and construction notes (filters, fills, crosswalk) for every column are in [`docs/CODEBOOK.md`](docs/CODEBOOK.md).
+### Enrichment columns (v0.2, +26): political violence & socioeconomic drivers
+
+Added to explain conflict and agricultural output with a richer set of drivers. Coups and World Bank covariates are national series broadcast onto every district by `iso3 + year`; ACLED is geocoded and spatially joined like UCDP.
+
+**Coups — Powell & Thyne (national, zero-filled):**
+
+| Column | Type | Non-null | Description |
+|--------|------|----------|-------------|
+| `coups_total` / `_successful` / `_failed` | int | 1,825,173 (100%) | Coup d'état attempts per country-year (successful = 2, failed = 1) |
+
+**ACLED political violence & unrest (geocoded → district-year; coverage-masked):** captures **non-lethal** events UCDP omits — protests, riots, violence against civilians without deaths. `NaN` = outside ACLED's staggered country coverage (Africa 1997 → USA 2020); `0` = covered but no event. Non-null 510,836 (28.0%) each.
+
+| Column | Description |
+|--------|-------------|
+| `acled_events_total` | All ACLED events in the district-year |
+| `acled_events_battles` / `_protests` / `_riots` / `_vac` / `_explosions` / `_strategic` | Counts by ACLED event type (vac = violence against civilians) |
+| `acled_fatalities` | ACLED fatality estimate (sum) |
+
+**World Bank WDI socioeconomic & agricultural covariates (national; CC BY 4.0):** continuous measures, `NaN` = no WB observation (not zero).
+
+| Column | Unit | Non-null | Column | Unit | Non-null |
+|--------|------|----------|--------|------|----------|
+| `wb_unemployment` | % | 93.2% | `wb_pop_0_14` | % | 96.6% |
+| `wb_unemployment_youth` | % | 93.2% | `wb_urban_pct` | % | 96.6% |
+| `wb_gdp_pc` | US$ | 95.2% | `wb_ag_valueadd_pct` | % GDP | 89.4% |
+| `wb_gdp_growth` | % | 94.7% | `wb_ag_employment_pct` | % | 93.2% |
+| `wb_inflation` | % | 90.0% | `wb_ag_land_pct` | % | 92.3% |
+| `wb_population` | persons | 96.6% | `wb_cereal_yield` | kg/ha | 91.9% |
+| `wb_pop_growth` | % | 96.6% | `wb_food_prod_index` | index | 89.4% |
+| | | | `wb_arable_land_pct` | % | 92.2% |
+
+Full definitions, units, sources, and construction notes (filters, fills, crosswalk, coverage mask) for every column are in [`docs/CODEBOOK.md`](docs/CODEBOOK.md).
 
 ### What the rows look like
 
@@ -140,7 +177,7 @@ Aggregation: country-level series are obtained by grouping on `iso3 x year` (sum
 
 ### Validation
 
-`reports/validation_report.md` records 26 automated checks, all passing - structural integrity, exact reconciliation against every interim layer, and external cross-checks against published figures (UCDP global fatality totals, FAO 2020 production, climate references, World Bank income-group counts), each cited by URL. `src/merge/02_validate_panel.py` re-runs them and exits nonzero on any failure.
+`reports/validation_report.md` records 32 automated checks, all passing - structural integrity, exact reconciliation against every interim layer, and external cross-checks against published figures (UCDP global fatality totals, FAO 2020 production, climate references, World Bank income-group counts), each cited by URL. `src/merge/02_validate_panel.py` re-runs them and exits nonzero on any failure.
 
 ## Documentation rules
 

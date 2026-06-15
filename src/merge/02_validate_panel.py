@@ -98,6 +98,9 @@ CONFLICT = INTERIM / "conflict_ged.parquet"
 WEATHER = INTERIM / "weather_chirps.parquet"
 YIELDS = INTERIM / "ag_yields_gdhy.parquet"
 INCOME = INTERIM / "income_class.parquet"
+COUPS = INTERIM / "coups_pt.parquet"
+ACLED_DY = INTERIM / "acled_district_year.parquet"
+ACLED_COV = INTERIM / "acled_coverage.parquet"
 CROPMIX = INTERIM / "cropmix_spam2020.parquet"
 PRICES = INTERIM / "prices_pinksheet.parquet"
 FAOSTAT = INTERIM / "faostat_qcl.parquet"
@@ -107,7 +110,7 @@ YEAR_MIN, YEAR_MAX = 1989, 2025
 N_YEARS = YEAR_MAX - YEAR_MIN + 1  # 37
 EXPECTED_N_DISTRICTS = 49_329
 EXPECTED_N_ROWS = EXPECTED_N_DISTRICTS * N_YEARS  # 1,825,173
-EXPECTED_N_COLS = 35
+EXPECTED_N_COLS = 61  # 35 v0.1 + 3 coup + 8 ACLED + 15 WB WDI cols
 
 CONFLICT_STEMS = [
     "n_events",
@@ -278,16 +281,24 @@ def check_structure(R: Results, panel: pd.DataFrame) -> None:
         f"null key cells={key_nulls}",
     )
 
-    # Dtypes sane: conflict cols integer, listed float cols float, year integer.
+    # Dtypes sane: conflict + coup cols integer, listed float cols float, year int.
+    coup_cols = ["coups_total", "coups_successful", "coups_failed"]
     int_ok = all(
-        pd.api.types.is_integer_dtype(panel[c]) for c in ["year", *CONFLICT_COLS]
+        pd.api.types.is_integer_dtype(panel[c])
+        for c in ["year", *CONFLICT_COLS, *coup_cols]
     )
+    acled_cols = [
+        "acled_events_total", "acled_events_battles", "acled_events_protests",
+        "acled_events_riots", "acled_events_vac", "acled_events_explosions",
+        "acled_events_strategic", "acled_fatalities",
+    ]
     float_cols = [
         "precip_mm",
         *[f"yield_{c}" for c in YIELD_CROPS],
         "cropland_ha",
         "price_shock_coverage",
         "price_shock",
+        *acled_cols,  # coverage-masked: float so NaN (not covered) is distinct
     ]
     float_ok = all(pd.api.types.is_float_dtype(panel[c]) for c in float_cols)
     bool_ok = pd.api.types.is_bool_dtype(panel["income_group_carried"])
@@ -401,6 +412,82 @@ def check_reconciliation(R: Results, panel: pd.DataFrame) -> None:
         "price_shock_coverage NaN iff cropland_ha NaN",
         "PASS" if bool((cov_nan == nan_crop).all()) else "FAIL",
         f"coverage NaN={int(cov_nan.sum()):,} cropland NaN={int(nan_crop.sum()):,}",
+    )
+
+    # 2f. Coups grand-total: panel sum == interim coups (broadcast to districts).
+    #     Each country's coup count is replicated across its districts, so the
+    #     panel total == sum over interim country-years weighted by #districts.
+    coups = pd.read_parquet(COUPS)
+    spine_df = pd.read_parquet(SPINE)
+    dcount = spine_df.groupby("iso3")["district_id"].nunique()
+    cw = coups[(coups["year"] >= YEAR_MIN) & (coups["year"] <= YEAR_MAX)].copy()
+    cw["ndist"] = cw["iso3"].map(dcount).fillna(0).astype(int)
+    expected_coups = int((cw["coups_total"] * cw["ndist"]).sum())
+    panel_coups = int(panel["coups_total"].sum())
+    R.add(
+        "RECON",
+        "coups grand-total == interim x districts",
+        "PASS" if panel_coups == expected_coups else "FAIL",
+        f"panel={panel_coups:,} expected={expected_coups:,} "
+        f"(interim coup country-years x #districts/country)",
+    )
+
+    # 2g. ACLED row-wise consistency: total == sum of the six event-type columns
+    #     wherever ACLED is observed (non-NaN). NaN rows are not-covered.
+    type_cols = [
+        "acled_events_battles", "acled_events_protests", "acled_events_riots",
+        "acled_events_vac", "acled_events_explosions", "acled_events_strategic",
+    ]
+    obs = panel["acled_events_total"].notna()
+    rowsum = panel.loc[obs, type_cols].sum(axis=1)
+    consistent = bool((rowsum == panel.loc[obs, "acled_events_total"]).all())
+    R.add(
+        "RECON",
+        "acled total == sum of event-type columns",
+        "PASS" if consistent else "FAIL",
+        f"checked {int(obs.sum()):,} covered district-years; consistent={consistent}",
+    )
+
+    # 2h. ACLED matched-event grand total == interim acled_district_year total
+    #     (restricted to in-spine, in-window district-years).
+    ady = pd.read_parquet(ACLED_DY)
+    ady_win = ady[
+        (ady["year"] >= YEAR_MIN) & (ady["year"] <= YEAR_MAX)
+        & (ady["district_id"].isin(spine_ids))
+    ]
+    interim_events = int(ady_win["acled_events_total"].sum())
+    panel_events = int(panel["acled_events_total"].fillna(0).sum())
+    R.add(
+        "RECON",
+        "acled events grand-total == interim",
+        "PASS" if panel_events == interim_events else "FAIL",
+        f"panel={panel_events:,} interim={interim_events:,}",
+    )
+
+    # 2i. ACLED coverage mask. The merge rule is: a district-year is non-NaN iff
+    #     it has a matched event OR it falls inside its country's ACLED-coded
+    #     coverage window [first..last]. Re-derive both inputs independently --
+    #     the 'matched' flag from the EVENTS table (acled_district_year, which
+    #     holds only district-years with >=1 event) and the window from the
+    #     coverage table -- and assert the panel's NaN pattern matches exactly.
+    cov = pd.read_parquet(ACLED_COV)
+    cov_first = dict(zip(cov["iso3"], cov["acled_first_year"]))
+    cov_last = dict(zip(cov["iso3"], cov["acled_last_year"]))
+    fy = panel["iso3"].map(cov_first)
+    ly = panel["iso3"].map(cov_last)
+    covered = (fy.notna() & (panel["year"] >= fy) & (panel["year"] <= ly)).to_numpy()
+    ev_keys = ady[["district_id", "year"]].drop_duplicates().assign(_m=True)
+    m = panel[["district_id", "year"]].merge(ev_keys, on=["district_id", "year"], how="left")
+    matched_flag = m["_m"].fillna(False).to_numpy()
+    expected_nonnan = matched_flag | covered
+    actual_nonnan = panel["acled_events_total"].notna().to_numpy()
+    mask_ok = bool((expected_nonnan == actual_nonnan).all())
+    R.add(
+        "RECON",
+        "acled coverage mask correct (matched OR in coverage window)",
+        "PASS" if mask_ok else "FAIL",
+        f"non-NaN: expected={int(expected_nonnan.sum()):,} "
+        f"actual={int(actual_nonnan.sum()):,}; match={mask_ok}",
     )
 
 
@@ -585,6 +672,48 @@ def check_external(R: Results, panel: pd.DataFrame) -> None:
         "PASS" if grad_ok else "FAIL",
         f"high-wheat (share>0.5, n={len(hi_wheat):,}) mean price_shock={hi_mean:.4f}; "
         f"zero-cropland (n={len(zero_crop):,}) price_shock all-NaN={zero_all_nan}",
+    )
+
+    # ACLED value-add: it surfaces NON-LETHAL unrest that UCDP GED (fatal events
+    # only) cannot. There must be many district-years with ACLED protests/riots
+    # but zero UCDP fatal events -- that gap is the reason ACLED was added.
+    obs = panel["acled_events_total"].notna()
+    nonlethal = panel[obs & (
+        (panel["acled_events_protests"] + panel["acled_events_riots"]) > 0
+    )]
+    gap = nonlethal[nonlethal["n_events_total"] == 0]
+    R.add(
+        "EXTERNAL",
+        "ACLED surfaces non-lethal unrest invisible to UCDP",
+        "PASS" if len(gap) > 1000 else "FAIL",
+        f"{len(gap):,} district-years with ACLED protests/riots but zero UCDP "
+        f"fatal events (of {len(nonlethal):,} with any protest/riot); "
+        "demonstrates the enrichment is real",
+    )
+
+    # ACLED coverage-start years must match ACLED's published staggered schedule
+    # (https://acleddata.com/knowledge-base/country-time-period-coverage/). The
+    # coverage table is built from ACLED's OWN country coding, so these are the
+    # true monitoring-start years, not artifacts of cross-border geo-assignment.
+    cov = pd.read_parquet(ACLED_COV)
+    starts = dict(zip(cov["iso3"], cov["acled_first_year"]))
+    expected_starts = {  # iso3 -> first ACLED year (published schedule)
+        "NGA": 1997,  # Africa
+        "SSD": 2011,  # South Sudan independence
+        "IDN": 2015,  # Indonesia
+        "IND": 2016,  # India
+        "SYR": 2017,  # Syria / Middle East
+        "UKR": 2018,  # Europe
+        "USA": 2020,  # United States
+    }
+    mism = {k: (starts.get(k), v) for k, v in expected_starts.items()
+            if starts.get(k) != v}
+    R.add(
+        "EXTERNAL",
+        "ACLED coverage starts match published schedule",
+        "PASS" if not mism else "FAIL",
+        (f"all {len(expected_starts)} match: {expected_starts}" if not mism
+         else f"MISMATCH (got, expected): {mism}"),
     )
 
 
@@ -870,6 +999,9 @@ def main() -> int:
         WEATHER,
         YIELDS,
         INCOME,
+        COUPS,
+        ACLED_DY,
+        ACLED_COV,
         CROPMIX,
         PRICES,
         FAOSTAT,
