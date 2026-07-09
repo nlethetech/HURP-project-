@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+famews_traps.csv	https://api.data.apps.fao.org/api/v2/bigquery?sql_url=https://data.apps.fao.org/catalog/dataset/13a9fda3-7f3e-4e6d-86aa-13e8c73cc0e4/resource/45c0e0ce-4581-42df-8c71-d550da9e28dd/download/famews-date-periods-traps-lat-lon-query.sql&dim_country=All%20Countries&period=all	2026-07-09T16:26:43Z	1683676	edb17cbc5bc1c860038ffcd437c2d56e6fb1cb554a406c706cce3e618fef9032

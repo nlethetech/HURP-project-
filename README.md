@@ -18,12 +18,14 @@ HURP_Data_analytics/
 ├── src/
 │   ├── acquisition/      # Scripts that download / scrape each raw source
 │   ├── cleaning/         # Scripts that turn each raw source into a tidy interim file
-│   └── merge/            # Scripts that join interim files into the final panel
+│   ├── merge/            # Scripts that join interim files into the global panel
+│   └── subset/           # Study subset: region filter + colonial/pest enrichment + validator
+├── reference/            # Committed small crosswalks (SPAM↔Pink Sheet, iso3↔region)
 ├── notebooks/            # Exploratory analysis and validation checks (not part of the pipeline)
 └── requirements.txt      # Pinned Python dependencies
 ```
 
-Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`src/merge`) → `data/processed`. Scripts are numbered in execution order within each folder (e.g. `01_download_acled.py`).
+Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`src/merge`) → `data/processed` → (`src/subset`) → study panel. Scripts are numbered in execution order within each folder (e.g. `01_download_acled.py`).
 
 ## Reproducing the dataset
 
@@ -50,6 +52,9 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
    .venv/bin/python src/acquisition/09_download_coups_pt.py      # Powell & Thyne coups (v0.2)
    .venv/bin/python src/acquisition/10_download_acled.py         # ACLED events (v0.2; needs ACLED_EMAIL/ACLED_PASSWORD in .env)
    .venv/bin/python src/acquisition/11_download_wb_wdi.py        # World Bank WDI covariates (v0.2)
+   .venv/bin/python src/acquisition/12_download_colonial.py      # COLDAT + QoG jan22 + COW states (study colonial layer)
+   .venv/bin/python src/acquisition/13_download_faw.py           # FAO FAMEWS fall-armyworm traps (study pest layer, Africa)
+   .venv/bin/python src/acquisition/14_download_locust.py        # FAO Locust Hub swarms + bands (study pest layer, Africa)
    ```
 
    **Cleaning** (`src/cleaning/`, one tidy table per source in `data/interim/`):
@@ -65,6 +70,9 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
    .venv/bin/python src/cleaning/09_coups_pt.py         # -> coups_pt.parquet (v0.2)
    .venv/bin/python src/cleaning/10_acled.py            # -> acled_district_year.parquet (+ acled_coverage) (v0.2)
    .venv/bin/python src/cleaning/11_wb_wdi.py           # -> wb_wdi.parquet (v0.2)
+   .venv/bin/python src/cleaning/12_colonial.py         # -> colonial.parquet (study colonial layer)
+   .venv/bin/python src/cleaning/13_faw.py              # -> faw_district_year.parquet (study pest, Africa)
+   .venv/bin/python src/cleaning/14_locust.py           # -> locust_district_year.parquet (study pest, Africa)
    ```
 
    **Merge** (`src/merge/`, joins the interim tables onto the spine × year frame):
@@ -73,6 +81,19 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
    ```
 
    The merge step also reads the committed crosswalk `reference/spam_pinksheet_crosswalk.csv` (SPAM crop → Pink Sheet commodity).
+
+   **Study subset / enrich** (`src/subset/`, the Africa + South America + Caribbean
+   conflict×agriculture study — filter the global panel, add the colonial moderator
+   layer and the Africa-only pest shocks):
+   ```
+   .venv/bin/python src/subset/01_region_filter.py      # -> panel_africa_samerica_caribbean.parquet (+ reference/iso3_region_crosswalk.csv)
+   .venv/bin/python src/subset/02_enrich_study.py       # -> panel_africa_samerica_caribbean_enriched.parquet (93 cols)
+   .venv/bin/python src/subset/03_validate_enriched.py  # 34 automated checks; exits nonzero on any failure
+   ```
+   Study panel: **79 countries (Africa + South America + Caribbean), 583,490 rows,
+   93 columns** — the global panel plus the colonial legacy layer (all 79) and the
+   Africa-only fall-armyworm + desert-locust shocks. See `docs/CODEBOOK.md`
+   ("Study subset", "Colonial legacy layer", "Pest layer — Africa").
 
 The final panel is one row per admin-2 district × year: **49,329 districts × 37 years (1989–2025) = 1,825,173 rows, 61 columns** (35 core + 26 v0.2 enrichment: coups, ACLED political violence/unrest, and World Bank socioeconomic & agricultural covariates). Variable definitions are in `docs/CODEBOOK.md`.
 

@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+qog_std_cs_jan22.csv	https://www.qogdata.pol.gu.se/data/qog_std_cs_jan22.csv	2026-07-09T16:17:18Z	2128401	bb0da212183b9d46c404b5491c548d30223cb5f62750c2ca31f0929a415b24fc

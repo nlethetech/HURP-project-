@@ -1,0 +1,199 @@
+iso3,continent,unregion,region,kept
+AFG,Asia,Southern Asia,Asia,False
+AGO,Africa,Middle Africa,Africa,True
+ALB,Europe,Southern Europe,Europe,False
+AND,Europe,Southern Europe,Europe,False
+ARE,Asia,Western Asia,Asia,False
+ARG,America,South America,South America,True
+ARM,Asia,Western Asia,Asia,False
+ATA,Antarctica,Antarctica,Antarctica,False
+ATG,America,Caribbean,Caribbean,True
+AUS,Oceania,Australia and New Zealand,Oceania,False
+AUT,Europe,Western Europe,Europe,False
+AZE,Asia,Western Asia,Asia,False
+BDI,Africa,Eastern Africa,Africa,True
+BEL,Europe,Western Europe,Europe,False
+BEN,Africa,Western Africa,Africa,True
+BFA,Africa,Western Africa,Africa,True
+BGD,Asia,Southern Asia,Asia,False
+BGR,Europe,Eastern Europe,Europe,False
+BHR,Asia,Western Asia,Asia,False
+BHS,America,Caribbean,Caribbean,True
+BIH,Europe,Southern Europe,Europe,False
+BLR,Europe,Eastern Europe,Europe,False
+BLZ,America,Central America,Central America,False
+BOL,America,South America,South America,True
+BRA,America,South America,South America,True
+BRB,America,Caribbean,Caribbean,True
+BRN,Asia,South-eastern Asia,Asia,False
+BTN,Asia,Southern Asia,Asia,False
+BWA,Africa,Southern Africa,Africa,True
+CAF,Africa,Middle Africa,Africa,True
+CAN,America,Northern America,Northern America,False
+CHE,Europe,Western Europe,Europe,False
+CHL,America,South America,South America,True
+CHN,Asia,Eastern Asia,Asia,False
+CIV,Africa,Western Africa,Africa,True
+CMR,Africa,Middle Africa,Africa,True
+COD,Africa,Middle Africa,Africa,True
+COG,Africa,Middle Africa,Africa,True
+COL,America,South America,South America,True
+COM,Africa,Eastern Africa,Africa,True
+CPV,Africa,Western Africa,Africa,True
+CRI,America,Central America,Central America,False
+CUB,America,Caribbean,Caribbean,True
+CYP,Asia,Western Asia,Asia,False
+CZE,Europe,Eastern Europe,Europe,False
+DEU,Europe,Western Europe,Europe,False
+DJI,Africa,Eastern Africa,Africa,True
+DMA,America,Caribbean,Caribbean,True
+DNK,Europe,Northern Europe,Europe,False
+DOM,America,Caribbean,Caribbean,True
+DZA,Africa,Northern Africa,Africa,True
+ECU,America,South America,South America,True
+EGY,Africa,Northern Africa,Africa,True
+ERI,Africa,Eastern Africa,Africa,True
+ESP,Europe,Southern Europe,Europe,False
+EST,Europe,Northern Europe,Europe,False
+ETH,Africa,Eastern Africa,Africa,True
+FIN,Europe,Northern Europe,Europe,False
+FJI,Oceania,Melanesia,Oceania,False
+FRA,Europe,Western Europe,Europe,False
+FSM,Oceania,Micronesia,Oceania,False
+GAB,Africa,Middle Africa,Africa,True
+GBR,Europe,Northern Europe,Europe,False
+GEO,Asia,Western Asia,Asia,False
+GHA,Africa,Western Africa,Africa,True
+GIN,Africa,Western Africa,Africa,True
+GMB,Africa,Western Africa,Africa,True
+GNB,Africa,Western Africa,Africa,True
+GNQ,Africa,Middle Africa,Africa,True
+GRC,Europe,Southern Europe,Europe,False
+GRD,America,Caribbean,Caribbean,True
+GRL,America,Northern America,Northern America,False
+GTM,America,Central America,Central America,False
+GUY,America,South America,South America,True
+HND,America,Central America,Central America,False
+HRV,Europe,Southern Europe,Europe,False
+HTI,America,Caribbean,Caribbean,True
+HUN,Europe,Eastern Europe,Europe,False
+IDN,Asia,South-eastern Asia,Asia,False
+IND,Asia,Southern Asia,Asia,False
+IRL,Europe,Northern Europe,Europe,False
+IRN,Asia,Southern Asia,Asia,False
+IRQ,Asia,Western Asia,Asia,False
+ISL,Europe,Northern Europe,Europe,False
+ISR,Asia,Western Asia,Asia,False
+ITA,Europe,Southern Europe,Europe,False
+JAM,America,Caribbean,Caribbean,True
+JOR,Asia,Western Asia,Asia,False
+JPN,Asia,Eastern Asia,Asia,False
+KAZ,Asia,Central Asia,Asia,False
+KEN,Africa,Eastern Africa,Africa,True
+KGZ,Asia,Central Asia,Asia,False
+KHM,Asia,South-eastern Asia,Asia,False
+KIR,Oceania,Micronesia,Oceania,False
+KNA,America,Caribbean,Caribbean,True
+KOR,Asia,Eastern Asia,Asia,False
+KWT,Asia,Western Asia,Asia,False
+LAO,Asia,South-eastern Asia,Asia,False
+LBN,Asia,Western Asia,Asia,False
+LBR,Africa,Western Africa,Africa,True
+LBY,Africa,Northern Africa,Africa,True
+LCA,America,Caribbean,Caribbean,True
+LIE,Europe,Western Europe,Europe,False
+LKA,Asia,Southern Asia,Asia,False
+LSO,Africa,Southern Africa,Africa,True
+LTU,Europe,Northern Europe,Europe,False
+LUX,Europe,Western Europe,Europe,False
+LVA,Europe,Northern Europe,Europe,False
+MAR,Africa,Northern Africa,Africa,True
+MCO,Europe,Western Europe,Europe,False
+MDA,Europe,Eastern Europe,Europe,False
+MDG,Africa,Eastern Africa,Africa,True
+MDV,Asia,Southern Asia,Asia,False
+MEX,America,Central America,Central America,False
+MHL,Oceania,Micronesia,Oceania,False
+MKD,Europe,Southern Europe,Europe,False
+MLI,Africa,Western Africa,Africa,True
+MLT,Europe,Southern Europe,Europe,False
+MMR,Asia,South-eastern Asia,Asia,False
+MNE,Europe,Southern Europe,Europe,False
+MNG,Asia,Eastern Asia,Asia,False
+MOZ,Africa,Eastern Africa,Africa,True
+MRT,Africa,Western Africa,Africa,True
+MUS,Africa,Eastern Africa,Africa,True
+MWI,Africa,Eastern Africa,Africa,True
+MYS,Asia,South-eastern Asia,Asia,False
+NAM,Africa,Southern Africa,Africa,True
+NER,Africa,Western Africa,Africa,True
+NGA,Africa,Western Africa,Africa,True
+NIC,America,Central America,Central America,False
+NLD,Europe,Western Europe,Europe,False
+NOR,Europe,Northern Europe,Europe,False
+NPL,Asia,Southern Asia,Asia,False
+NRU,Oceania,Polynesia,Oceania,False
+NZL,Oceania,Australia and New Zealand,Oceania,False
+OMN,Asia,Western Asia,Asia,False
+PAK,Asia,Southern Asia,Asia,False
+PAN,America,Central America,Central America,False
+PER,America,South America,South America,True
+PHL,Asia,South-eastern Asia,Asia,False
+PLW,Oceania,Micronesia,Oceania,False
+PNG,Oceania,Melanesia,Oceania,False
+POL,Europe,Eastern Europe,Europe,False
+PRK,Asia,Eastern Asia,Asia,False
+PRT,Europe,Southern Europe,Europe,False
+PRY,America,South America,South America,True
+QAT,Asia,Western Asia,Asia,False
+ROU,Europe,Eastern Europe,Europe,False
+RUS,Europe,Eastern Europe,Europe,False
+RWA,Africa,Eastern Africa,Africa,True
+SAU,Asia,Western Asia,Asia,False
+SDN,Africa,Northern Africa,Africa,True
+SEN,Africa,Western Africa,Africa,True
+SGP,Asia,South-eastern Asia,Asia,False
+SLB,Oceania,Melanesia,Oceania,False
+SLE,Africa,Western Africa,Africa,True
+SLV,America,Central America,Central America,False
+SMR,Europe,Southern Europe,Europe,False
+SOM,Africa,Eastern Africa,Africa,True
+SRB,Europe,Southern Europe,Europe,False
+SSD,Africa,Eastern Africa,Africa,True
+STP,Africa,Middle Africa,Africa,True
+SUR,America,South America,South America,True
+SVK,Europe,Eastern Europe,Europe,False
+SVN,Europe,Southern Europe,Europe,False
+SWE,Europe,Northern Europe,Europe,False
+SWZ,Africa,Southern Africa,Africa,True
+SYC,Africa,Eastern Africa,Africa,True
+SYR,Asia,Western Asia,Asia,False
+TCD,Africa,Middle Africa,Africa,True
+TGO,Africa,Western Africa,Africa,True
+THA,Asia,South-eastern Asia,Asia,False
+TJK,Asia,Central Asia,Asia,False
+TKM,Asia,Central Asia,Asia,False
+TLS,Asia,South-eastern Asia,Asia,False
+TON,Oceania,Polynesia,Oceania,False
+TTO,America,Caribbean,Caribbean,True
+TUN,Africa,Northern Africa,Africa,True
+TUR,Asia,Western Asia,Asia,False
+TUV,Oceania,Polynesia,Oceania,False
+TWN,Asia,Eastern Asia,Asia,False
+TZA,Africa,Eastern Africa,Africa,True
+UGA,Africa,Eastern Africa,Africa,True
+UKR,Europe,Eastern Europe,Europe,False
+URY,America,South America,South America,True
+USA,America,Northern America,Northern America,False
+UZB,Asia,Central Asia,Asia,False
+VAT,Europe,Southern Europe,Europe,False
+VCT,America,Caribbean,Caribbean,True
+VEN,America,South America,South America,True
+VNM,Asia,South-eastern Asia,Asia,False
+VUT,Oceania,Melanesia,Oceania,False
+WSM,Oceania,Polynesia,Oceania,False
+XKX,Europe,Southern Europe,Europe,False
+YEM,Asia,Western Asia,Asia,False
+ZAF,Africa,Southern Africa,Africa,True
+ZMB,Africa,Eastern Africa,Africa,True
+ZWE,Africa,Eastern Africa,Africa,True

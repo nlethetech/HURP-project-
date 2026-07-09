@@ -460,3 +460,147 @@ Template for new entries:
   8. Use api.figshare.com, not the figshare HTML article page (returns an anti-bot interstitial, HTTP 202, to script user-agents). Signed S3 URLs expire in ~10 s (X-Amz-Expires=10) — pipe the 302 directly rather than caching URLs.
   9. Raw EOG route: VNL file URLs 302 to a Keycloak login (free account with verified e-mail); effective 2026-06-01, programmatic OpenID access is restricted to paid subscribers (token endpoint https://eogauth-new.mines.edu/realms/eog/protocol/openid-connect/token, grant_type=password, 5-min tokens). Do not build the pipeline on EOG endpoints.
 - **Facts verified**: 2026-06-11 (live re-fetch of provider pages)
+
+## Colonial legacy (study-subset moderator layer)
+
+Three small, static, country-level sources added 2026-07-09 for the
+Africa + South America + Caribbean study subset (see docs/CODEBOOK.md,
+"Colonial legacy layer"). All are TIME-INVARIANT country attributes broadcast
+onto every district-year by `iso3` — moderators to interact with the
+time-varying conflict/output shocks, never standalone within-country regressors.
+Acquisition: `src/acquisition/12_download_colonial.py`; cleaning:
+`src/cleaning/12_colonial.py`.
+
+### COLDAT — Colonial Dates Dataset (Becker 2019, v3 2023)
+- **Provider**: Bastian Becker (Univ. of Bremen, SOCIUM); Harvard Dataverse.
+- **Role in panel**: colonizer identity (8 European powers) + colonial start/end
+  years → `col_start_year`, `col_end_year`, `col_duration_years`,
+  `coldat_colonizer_last`, `coldat_n_colonizers`.
+- **Homepage / DOI**: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T9SDEW
+- **Download / API**: direct, no auth. `COLDAT_colonies.tab` (wide, one row per
+  country) = Dataverse datafile id 7416946 (`/api/access/datafile/7416946?format=original`).
+- **Coverage**: contemporary nation-states; 79/79 of our study countries match
+  by name (regex). Ethiopia & Liberia coded not-colonized (all-zero dummies).
+- **Unit**: country (time-invariant). Uses the `_mean` aggregation of dates
+  (author-preferred for statistics).
+- **License**: CC0 1.0 (public domain) — fully redistributable, raw or derived.
+- **Redistribution in repo**: yes (CC0). Raw gitignored per repo convention;
+  re-pulled by the acquisition script.
+- **Citation**: Becker, Bastian (2019). "Introducing COLDAT: The Colonial Dates
+  Dataset." SOCIUM/SFB 1342 WorkingPaper 02/2019.
+- **Gotchas**: join is by COUNTRY NAME (no ISO in the .tab) — resolved via
+  `country_converter` regex. "Last colonizer" (max `colend`) can reflect a brief
+  post-war administration (Libya→British, Somalia→British, Morocco→Spanish); we
+  therefore take colonizer identity from QoG `ht_colonial` (below) and keep
+  COLDAT's `coldat_colonizer_last` only as a cross-check.
+- **Facts verified**: 2026-07-09 (Dataverse API + live download).
+
+### QoG Standard Cross-Section, version jan22 (ht_colonial + lp_legor)
+- **Provider**: Quality of Government Institute, Univ. of Gothenburg.
+- **Role in panel**: `ht_colonial` (Hadenius–Teorell colonizer identity, complete
+  for our 79) → `colonizer`; `lp_legor` (La Porta legal origin) → `legal_origin`,
+  `legal_origin_filled`, `civil_vs_common`. Also supplies the `ccodecow`↔`ccodealp`
+  (COW code ↔ ISO3) bridge used to key the COW file.
+- **Homepage**: https://www.qog.pol.gu.se/data/datadownloads/qogstandarddata
+- **Download / API**: direct CSV https://www.qogdata.pol.gu.se/data/qog_std_cs_jan22.csv
+- **Coverage**: `ht_colonial` 79/79; `lp_legor` 70/79 (9 blanks imputed from
+  colonizer identity and flagged `legal_origin_imputed`).
+- **Unit**: country cross-section (one row per country; time-invariant here).
+- **License**: free academic/research use with citation (QoG terms). Ship derived
+  columns with citation; do not re-host the full compiled bundle.
+- **Citation**: Teorell, Jan et al. (2022). "The Quality of Government Standard
+  Dataset, version Jan22." Univ. of Gothenburg, QoG Institute. Underlying:
+  Hadenius & Teorell (colonial origin); La Porta et al. (1999, legal origins).
+- **Gotchas**: **pin jan22** — `lp_legor` was dropped from QoG ≥ jan23.
+  `ht_colonial` codes: 0 None,1 Dutch,2 Spanish,3 Italian,4 US,5 British,6 French,
+  7 Portuguese,8 Belgian,9 British-French,10 Australian. `lp_legor`: 1 English,
+  2 French,3 Socialist,4 German,5 Scandinavian.
+- **Facts verified**: 2026-07-09 (live download; coverage checked vs the 79).
+
+### Correlates of War — State System Membership (states2016, v2016)
+- **Provider**: Correlates of War Project (correlatesofwar.org).
+- **Role in panel**: `styear` (year the state entered the international system) →
+  `independence_year` and the one time-VARYING colonial column
+  `years_since_independence = year − independence_year`.
+- **Homepage**: https://correlatesofwar.org/data-sets/state-system-membership/
+- **Download / API**: direct CSV https://correlatesofwar.org/wp-content/uploads/states2016.csv
+- **Coverage**: 79/79 via the QoG `ccodecow`→`iso3` bridge; current spell
+  (`endyear==2016`), max `styear` for multi-spell states.
+- **License**: free use, citation required, no paywalling of access.
+- **Citation**: Correlates of War Project (2017). "State System Membership List,
+  v2016." http://correlatesofwar.org
+- **Gotchas**: COW state-system entry ≠ decolonization for a few countries
+  (occupation/protectorate artifacts): e.g. Haiti entry 1934 (US-occupation end)
+  vs COLDAT decolonization 1804; Ethiopia 1941. Use `col_end_year` (COLDAT) for
+  "freed from colonial rule"; `independence_year` for "years in the state system."
+  coco has no COW code class → bridged via QoG.
+- **Facts verified**: 2026-07-09 (live download; bridge checked vs the 79).
+
+## Pest / crop disease (Africa-only shock layer)
+
+Two georeferenced, dated, plausibly-EXOGENOUS crop-pest sources added 2026-07-09
+for the study subset (see docs/CODEBOOK.md, "Pest layer — Africa"). **By design
+these cover Africa only** — no georeferenced desert-locust or fall-armyworm data
+exists for South America or the Caribbean (species-range fact, not a data gap),
+so the pest columns are NaN for all Americas rows. Both are MONITORING/SURVEY
+feeds: a missing district-year is *not observed*, never *pest-free*, so they are
+never zero-filled. Acquisition: `src/acquisition/13_download_faw.py`,
+`14_download_locust.py`; cleaning: `src/cleaning/13_faw.py`, `14_locust.py`
+(point-in-polygon to the CGAZ admin-2 spine).
+
+### FAO FAMEWS — Fall Armyworm trap monitoring
+- **Provider**: FAO Fall Armyworm Monitoring & Early Warning System (FAMEWS).
+- **Role**: invasion-front timing of fall armyworm (Spodoptera frugiperda), a
+  maize pest that spread across Africa from 2016 → `faw_first_detection_year`,
+  `years_since_faw_arrival`, `faw_present`, `faw_confirmed_sum`, `faw_catch_rate`,
+  `faw_n_trap_checks`. The district's first FAW year is driven by the continental
+  invasion wave, not local politics → the cleaner exogenous pest shock.
+- **Download / API**: FAO Open Data catalog, dataset UUID
+  13a9fda3-7f3e-4e6d-86aa-13e8c73cc0e4; BigQuery-backed CSV, no key
+  (`.../api/v2/bigquery?sql_url=...famews-...&dim_country=All%20Countries&period=all`).
+- **Coverage**: 15,220 dated georeferenced trap checks, 2018-2025 (usable
+  2018-2023; collapses after). **42 of our African countries monitored** (35 with
+  a confirmed detection); **0 South America / Caribbean** (bar 2 zero-FAW Peru
+  points, masked out).
+- **Unit**: trap check (lat/lon + date) → district-year via point-in-polygon.
+- **License**: stated CC-BY-3.0-IGO, but this is the same FAO Open Data /
+  Hand-in-Hand platform whose desert-locust dataset carries a conflicting
+  CC-BY-NC-SA-3.0-IGO statement (see locust entry) → **treat as NC-SA by default**;
+  confirm before any *public* release of derived FAW columns.
+- **Redistribution in repo**: raw gitignored, re-pulled by the acquisition script
+  (repo convention); derived columns only, private/internal use.
+- **Gotchas**: opt-in app + effort bias — normalize by `faw_n_trap_checks`, never
+  read a monitored-but-negative district-year as pest-free vs an unmonitored NaN.
+  It is trap monitoring (adult moth catches), a pest-pressure proxy, not crop
+  damage. Pin/archive the pull (mutable endpoint).
+- **Facts verified**: 2026-07-09 (live pull; 99.8% of points joined a district).
+
+### FAO Locust Hub / RAMSES — Desert Locust swarms + hopper bands
+- **Provider**: FAO Desert Locust Information Service (DLIS) / Locust Hub.
+- **Role**: gregarious, crop-destroying desert-locust (Schistocerca gregaria)
+  activity → `dl_present_flag`, `dl_swarm_obs`, `dl_band_obs`, `dl_gregarious_obs`,
+  `dl_area_treated_ha`, `dl_first_gregarious_year`. Plague dynamics are
+  wind/weather-driven (not conflict-caused) → an exogenous agricultural shock.
+- **Download / API**: FAO Open Data catalog, "Desert locusts observations
+  (Global)", UUID 088f29ea-6e33-4e9c-8779-9b64dd2450b0; BigQuery CSV with
+  `cat=SWARM` / `cat=BAND`, no key.
+- **Coverage**: 65,113 gregarious observations in the raw pull, dated 2004-**2026**
+  (incl. the 2019-2022 upsurge, 2020 = the peak). The study panel caps at 2025, so
+  7 out-of-window 2026 observations are dropped at merge (logged); **panel locust
+  values are 2004-2025**. 20 of our African countries — the desert-locust belt
+  (Sahel, Horn, N. Africa): DZA EGY LBY MAR TUN, MRT MLI NER TCD SEN, SDN SSD ERI
+  DJI ETH SOM KEN UGA TZA COD. **0 South America / Caribbean.**
+- **Unit**: field observation (lat/lon + date) → district-year via point-in-polygon.
+- **License**: FAO. The Observations page states CC-BY-3.0-IGO while a sibling
+  "Hand-in-Hand" page states CC-BY-NC-SA-3.0-IGO → **treat as NC-SA by default**;
+  resolve before any *public* release of derived locust columns (private/internal
+  use is low-risk).
+- **Redistribution in repo**: raw gitignored, re-pulled by the acquisition script;
+  derived columns only, private/internal use pending the license resolution above.
+- **Gotchas**: the "smart-csv" preview endpoint hard-caps at 50,000 rows per
+  request; only `cat=SWARM` (37k) and `cat=BAND` (28k) return COMPLETE — ADULT /
+  HOPPER / NO-LOCUST each truncate at 50k and are excluded (also lower-intensity).
+  So this layer is the **gregarious (damaging) phase only**, which is the
+  agriculturally-relevant signal. Survey-effort bias: presence-only within the
+  belt; unmonitored = NaN, not zero.
+- **Facts verified**: 2026-07-09 (live pull; 98.2% of points joined a district).

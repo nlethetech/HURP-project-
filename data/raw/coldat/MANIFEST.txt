@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+COLDAT_colonies.tab	https://dataverse.harvard.edu/api/access/datafile/7416946?format=original	2026-07-09T16:17:18Z	26410	ebe3a1c4b16fd339e249da6ca7993ee312cfe41dfe2f5748eebb6dfa37a7c4dd

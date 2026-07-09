@@ -259,3 +259,138 @@ interim tables and the committed crosswalk; the build is deterministic
 (byte-identical parquet on re-run). The build also writes
 `reports/panel_build_report.txt` with the full per-column non-null counts,
 join cardinalities, and the distributions above.
+
+---
+
+## Study subset — Africa + South America + Caribbean
+
+`src/subset/01_region_filter.py` derives two grouping columns from `iso3`
+(deterministically, via `country_converter`) and cuts the region-restricted
+study panel for the conflict × agriculture investigation. It writes:
+
+- `data/processed/panel_africa_samerica_caribbean.parquet` — the study panel,
+  **583,490 rows × 63 columns**, one row per `(district_id, year)`, 1989–2025.
+- `reference/iso3_region_crosswalk.csv` — every `iso3` in the master panel →
+  `continent`, `region`, `kept` flag (committed; the full audit of what went
+  where).
+
+| Variable | Definition | Unit | Source | Construction notes |
+|----------|------------|------|--------|--------------------|
+| `continent` | Continent of the district's country. | text | derived (`country_converter` from `iso3`) | `Africa`, `America`, `Asia`, `Europe`, `Oceania`, `Antarctica`. |
+| `region` | Study region. Inside the Americas this is the UN sub-region; elsewhere it equals `continent`. | text | derived (`country_converter` from `iso3`) | `Africa` \| `South America` \| `Central America` \| `Caribbean` \| `Northern America` \| `<continent>`. |
+
+**Subset rule.** Keep `region ∈ {Africa, South America, Caribbean}`. This is a
+strict row filter of the master panel plus the two derived columns — no other
+value is changed, so every fill/mask/carry-forward documented above is
+preserved. Result: **79 countries** — 54 Africa, 12 South America, 13 Caribbean.
+
+| Region | Rows | Countries |
+|--------|------|-----------|
+| Africa | 197,469 | 54 |
+| South America | 317,904 | 12 |
+| Caribbean | 68,117 | 13 |
+
+**Deliberately excluded** (documented so the boundary is explicit): all of
+**Central America** (incl. Guatemala, El Salvador, Nicaragua, Panama, Costa
+Rica, Honduras, Belize), **Northern America** (US, Canada, Mexico, Greenland),
+and every district outside Africa and the Americas. The rest of the master
+panel is untouched and still rebuildable.
+
+---
+
+## Colonial legacy layer (study subset)
+
+Country-level colonial-legacy moderators added by `src/cleaning/12_colonial.py`
+(→ `data/interim/colonial.parquet`) and joined onto the study panel by
+`src/subset/02_enrich_study.py` (→ `panel_africa_samerica_caribbean_enriched.parquet`).
+Sources: COLDAT (CC0), QoG jan22 (`ht_colonial`, `lp_legor`), COW state-system
+membership — see `docs/DATA_SOURCES.md`, "Colonial legacy". Every column is
+TIME-INVARIANT and broadcast onto all district-years by `iso3` — **usable only as
+interactions/moderators with the time-varying shocks** (a country fixed effect
+absorbs them), except `years_since_independence`, which varies over the panel.
+Coverage: **79/79 study countries** carry `colonizer`, `civil_vs_common`, and
+`independence_year` (zero missing).
+
+| Variable | Definition | Source | Notes |
+|----------|------------|--------|-------|
+| `colonizer` | Identity of the (main) colonial power: British / French / Spanish / Portuguese / Belgian / Dutch / Italian / US / None. | QoG `ht_colonial` | The primary, complete colonizer variable (Hadenius–Teorell). Captures the *dominant* power, not brief post-war administrations. |
+| `coldat_colonizer_last` | Last colonial power to leave (max `colend`), COLDAT vocabulary. | COLDAT | Cross-check only; disagrees with `colonizer` for occupation artifacts (Libya, Morocco, Somalia). |
+| `col_ever_colonized` | 1 if `colonizer` is a real power, else 0 (Ethiopia, Liberia = 0). | derived | |
+| `coldat_n_colonizers` | Count of distinct European colonizers in COLDAT (flags multi-colonizer cases, e.g. Cameroon). | COLDAT | |
+| `col_start_year` | First year of colonial rule (min `colstart`, `_mean` aggregation). | COLDAT | NaN for never-colonized. |
+| `col_end_year` | Decolonization year (max `colend`, `_mean` aggregation). | COLDAT | The best "when was it freed from colonial rule" value (e.g. Haiti 1804). NaN for never-colonized. |
+| `col_duration_years` | `col_end_year − col_start_year`; length of colonial rule, an extraction-intensity proxy. | derived | NaN for never-colonized. |
+| `independence_year` | Year the state entered the international system. | COW `styear` | ≠ `col_end_year` for occupation/protectorate artifacts (Haiti 1934, Ethiopia 1941). Range 1822 (Brazil) – 2011 (South Sudan). |
+| `years_since_independence` | `year − independence_year`. **The one time-VARYING colonial column** (survives a country FE); a slow post-colonial state-consolidation control. | derived | |
+| `legal_origin` | La Porta legal origin: English / French / Socialist / German / Scandinavian. Raw `lp_legor` (NaN for 9 study countries). | QoG `lp_legor` | The legal/policing institutional-tradition channel. |
+| `legal_origin_filled` | `legal_origin` with the 9 blanks imputed from `colonizer` (British/US→English; else→French). | derived | |
+| `legal_origin_imputed` | 1 if `legal_origin_filled` was imputed (raw `lp_legor` was blank), else 0. | derived | Transparency flag for the 9 imputed countries. |
+| `civil_vs_common` | Binary legal tradition: `common` (English legal origin) vs `civil` (all others). | derived | Study countries: 31 common, 48 civil. |
+| `col_british` / `col_french` / `col_iberian` | 0/1 moderator-split dummies (`colonizer` == British / French / in {Spanish, Portuguese}). | derived | Key off `colonizer` (ht_colonial primary power), so Italian-primary states (Libya, Somalia) intentionally carry all three = 0 even where a *secondary* British administration existed. |
+
+**Caveats (read before using the date columns):**
+
+- `col_end_year` / `col_duration_years` are the **COLDAT observed colonial-presence
+  window** (max end across *all* colonizers), **not de jure independence**. They
+  are unreliable for League/UN-mandate and multi-power / border-changed cases —
+  Namibia (`col_end` 1920 = German-mandate handover, independence 1990), Eritrea
+  (`col_end` 1951 = end of British military administration, independence 1993),
+  Morocco (`col_end` 1975 reflects Western Sahara, 19 yr *after* Morocco's 1956
+  independence). For an exposure/decolonization measure use `independence_year`.
+- `independence_year` = COW state-system entry, corrected where that reflects a
+  contested/unrecognized entry (`ZWE` set to 1980, not the 1965 white-minority
+  UDI). It can still differ from `col_end_year` for occupation/protectorate
+  artifacts (Haiti 1934, Ethiopia 1941).
+- Imputed legal origins (`legal_origin_imputed==1`, 9 study countries) are a crude
+  colonizer→legal-family proxy. `ERI` is overridden to French/civil (Italian +
+  Ethiopian heritage); `NAM` remains English/common via South-African heritage
+  (contested) — treat `civil_vs_common` for these imputed cells with care.
+- `SSD` (seceded 2011) is `col_ever_colonized==1` / `colonizer==British` but has
+  NaN `col_start_year`/`col_end_year`/`col_duration_years` (no COLDAT spell of its
+  own) — a filter on `col_duration_years` silently drops it.
+
+---
+
+## Pest layer — Africa (study subset)
+
+Two georeferenced crop-pest shocks joined by `src/subset/02_enrich_study.py` from
+`data/interim/{faw,locust}_district_year.parquet` (built by
+`src/cleaning/13_faw.py`, `14_locust.py`). **Africa-only by design** — no
+georeferenced locust/FAW data exists for South America or the Caribbean, so every
+pest column is NaN for all Americas rows (a species-range fact). Both are
+MONITORING/SURVEY feeds: **a missing district-year is *not observed*, not
+pest-free** — the columns are NEVER zero-filled across the frame; only observed
+district-years carry values (values incl. a true 0 where a monitored district-year
+recorded no pest). Observation columns join on `(district_id, year)`; the
+first-detection-year constants are broadcast to all of a district's years.
+
+| Variable | Definition | Source | Notes |
+|----------|------------|--------|-------|
+| `faw_present` | 1 if any confirmed fall-armyworm in the monitored district-year, else 0 (0 = monitored, none confirmed). | FAMEWS | NaN = not monitored. |
+| `faw_confirmed_sum` | Sum of confirmed FAW moth counts across trap checks in the district-year. | FAMEWS | |
+| `faw_suspconf_sum` | Sum of suspected+confirmed FAW counts. | FAMEWS | |
+| `faw_n_trap_checks` | Number of trap checks (monitoring effort / exposure denominator). | FAMEWS | Always divide intensity by this. |
+| `faw_catch_rate` | `faw_confirmed_sum / faw_n_trap_checks`; effort-normalized infestation intensity. | derived | |
+| `faw_first_detection_year` | First year the district recorded a confirmed FAW detection (invasion-front timing). | derived | District constant; broadcast to all years. |
+| `years_since_faw_arrival` | `year − faw_first_detection_year`. TIME-VARYING invasion-wave clock (negative before arrival). | derived | The most defensibly exogenous FAW signal. |
+| `faw_arrived` | 1 if `year ≥ faw_first_detection_year`, else 0; NaN if the district never detected FAW. | derived | |
+| `dl_present_flag` | 1 for any gregarious desert-locust (swarm/band) observation in the district-year. | Locust Hub | Only ever 1 or NaN (presence obs). |
+| `dl_swarm_obs` | Count of flying adult-SWARM observations in the district-year. | Locust Hub | The most crop-destructive phase. |
+| `dl_band_obs` | Count of marching hopper-BAND observations. | Locust Hub | |
+| `dl_gregarious_obs` | `dl_swarm_obs + dl_band_obs`. | derived | Total damaging-phase activity. |
+| `dl_area_treated_ha` | Hectares treated (control operations) in the district-year. | Locust Hub | Response-intensity proxy. |
+| `dl_first_gregarious_year` | First year the district recorded a gregarious swarm/band (informational; locust is recurrent, not a one-time invasion). | derived | |
+
+**Coverage (study rows):** FAW = 1,500 monitored district-years across **998
+districts** (623 of them confirmed FAW at least once), **42 African countries
+monitored** (35 recorded a confirmed detection), 2018–2025. Locust = 1,236
+observed district-years, 630 districts, **20 belt countries**, 2004–2025
+(captures the 2019–22 upsurge, 2020 peak). Both NaN for all 12 South American +
+13 Caribbean countries. Note: source feeds run to 2026, but the panel ends 2025,
+so 7 out-of-window 2026 locust observations are dropped at merge (logged).
+
+**Use as an exogenous shock, not a control.** Locust plagues and the FAW invasion
+front are weather/wave-driven, not conflict-caused — that is what lets them
+identify the *agriculture → conflict* arrow. Interact with the colonial moderators
+and read as an **Africa-subsample** result; the Americas are honestly uncovered on
+pest.
