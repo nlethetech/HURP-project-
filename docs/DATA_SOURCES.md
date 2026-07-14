@@ -733,3 +733,12 @@ Acquisition: `src/acquisition/18_download_cru_temp.py`, `19_download_travel_time
   totals carry no data rows in the bulk snapshot. Values cross-checked: Nigeria
   cassava 55.6M t (world #1), Brazil maize 104M t, Ethiopia cereals 32.5M t.
 - **Facts verified**: 2026-07-14 (live parse; e2e).
+
+### USGS Mineral Industries GIS of Africa — gold (+ diamonds/minerals complement)
+- **Provider**: USGS National Minerals Information Center. "Compilation of Geospatial Data (GIS) for the Mineral Industries and Related Infrastructure of Africa" (2021), DOI 10.5066/P97EQWXP.
+- **Role**: African gold deposits/mines (`has_gold`, `n_gold_deposits`) — MRDS badly undercounts African artisanal/industrial gold (Mali 4, Burkina 5 vs true dozens), so Africa uses this USGS compilation; the Americas keep MRDS.
+- **Download (keyless, CC0)**: ScienceBase file `Africa_GIS.gdb.zip` (138 MB file geodatabase), item 607611a9d34e018b3201cbbf. Gold identified where any `DsgAttr*` field == "Gold" across the 3 point layers (AFR_Mineral_Facilities / _Deposits / _Exploration).
+- **Coverage**: all 54 African study countries; 952 gold points. Fills the gap: Mali 4→62, Burkina 5→69, Ghana 26→105, Tanzania 5→64, DRC 8→33 gold sites. Sudan still thin (12). Point-in-polygon join to the CGAZ admin-2 spine; district-constant (static ~2018 snapshot).
+- **License**: CC0 1.0 / public domain. Fully redistributable.
+- **Gotchas**: commodity lives in cryptic `DsgAttr*` fields (use the FGDC aliases); geometry is Point Z (force to 2D); no artisanal/lootable attribute is derivable (unlike DIADATA for diamonds); counts are not cross-region comparable with the MRDS Americas gold (use `has_gold` for that).
+- **Facts verified**: 2026-07-14 (live parse; per-country gold counts cross-checked).

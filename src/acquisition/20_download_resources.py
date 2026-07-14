@@ -51,6 +51,11 @@ SOURCES = {
                 "https://cdn.cloud.prio.org/files/d042fc6a-ce8a-4c74-b555-e84d68365b99/DIADATA%20Data.zip",
                 100_000),
     "mrds": ("mrds-csv.zip", "https://mrdata.usgs.gov/mrds/mrds-csv.zip", 5_000_000),
+    # USGS Mineral Industries GIS of Africa (2021, CC0) — the African-gold complement
+    # to MRDS (which badly undercounts African artisanal gold). File geodatabase.
+    "usgs_africa_gis": ("Africa_GIS.gdb.zip",
+                        "https://www.sciencebase.gov/catalog/file/get/607611a9d34e018b3201cbbf?f=__disk__30%2F8a%2Fb1%2F308ab140de2e0a1384172068209374d19ae4a65a",
+                        50_000_000),
 }
 
 

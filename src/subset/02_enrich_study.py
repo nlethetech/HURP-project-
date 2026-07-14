@@ -99,7 +99,7 @@ MARKET_COLS = ["travel_time_to_city_min_median", "travel_time_to_city_min_mean",
                "travel_time_to_city_log1p", "market_access_snapshot_year"]
 RESOURCE_COLS = ["has_oil_gas", "n_oil_gas_fields", "has_oil", "has_gas", "oil_gas_first_discovery_year",
                  "has_diamond", "n_diamond_deposits", "n_diamond_secondary", "n_diamond_primary",
-                 "has_lootable_diamond", "n_mineral_deposits"]
+                 "has_lootable_diamond", "has_gold", "n_gold_deposits", "n_mineral_deposits"]
 
 
 def main() -> None:

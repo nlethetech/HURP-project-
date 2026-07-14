@@ -61,7 +61,7 @@ def sjoin_counts(geom: gpd.GeoDataFrame, spine: gpd.GeoDataFrame, predicate: str
 
 
 def main() -> None:
-    spine = gpd.read_file(SPINE, layer="spine")[["district_id", "geometry"]].to_crs(4326)
+    spine = gpd.read_file(SPINE, layer="spine")[["district_id", "iso3", "geometry"]].to_crs(4326)
     out = spine[["district_id"]].copy()
 
     # --- PETRODATA onshore oil/gas ---
@@ -116,14 +116,48 @@ def main() -> None:
     out = out.merge(jm.groupby("district_id").size().rename("n_mineral_deposits"), on="district_id", how="left")
     out["n_mineral_deposits"] = out["n_mineral_deposits"].fillna(0).astype(int)
 
+    # --- Gold: USGS Africa GIS (3 mineral point layers) for Africa + MRDS for the Americas ---
+    # MRDS badly undercounts African artisanal gold, so Africa uses the USGS Africa
+    # compilation (Facilities + Deposits + Exploration) and the Americas keep MRDS.
+    afr_iso = set(pd.read_csv(ROOT / "reference" / "iso3_region_crosswalk.csv").query("region == 'Africa'")["iso3"])
+    gdb = ROOT / "data" / "raw" / "usgs_africa_gis" / "Africa_GIS.gdb"
+    parts = []
+    for lyr in ["AFR_Mineral_Facilities", "AFR_Mineral_Deposits", "AFR_Mineral_Exploration"]:
+        gl = gpd.read_file(gdb, layer=lyr)
+        dsg = [c for c in gl.columns if c.startswith("DsgAttr")]
+        is_gold = gl[dsg].apply(lambda r: r.astype(str).str.fullmatch("Gold").any(), axis=1)
+        parts.append(gl.loc[is_gold, ["geometry"]])
+    usgs_gold = gpd.GeoDataFrame(pd.concat(parts, ignore_index=True), geometry="geometry", crs="EPSG:4326")
+    usgs_gold["geometry"] = usgs_gold.geometry.force_2d()   # Point Z -> Point
+    # A mine can appear in >1 USGS layer (Deposits + Exploration); de-dup by ~100 m
+    # location so n_gold_deposits does not double-count it.
+    usgs_gold["_rx"] = usgs_gold.geometry.x.round(3)
+    usgs_gold["_ry"] = usgs_gold.geometry.y.round(3)
+    usgs_gold = usgs_gold.drop_duplicates(["_rx", "_ry"]).drop(columns=["_rx", "_ry"])
+    u_ct = sjoin_counts(usgs_gold, spine).groupby("district_id").size()
+    gm = pd.read_csv(MRDS, low_memory=False, usecols=["latitude", "longitude", "commod1", "commod2", "commod3"]).dropna(subset=["latitude", "longitude"])
+    gm = gm[gm[["commod1", "commod2", "commod3"]].apply(lambda r: r.astype(str).str.contains("Gold", case=False, na=False).any(), axis=1)]
+    gmp = gpd.GeoDataFrame(gm, geometry=gpd.points_from_xy(gm["longitude"], gm["latitude"]), crs="EPSG:4326")
+    m_ct = sjoin_counts(gmp, spine).groupby("district_id").size()
+    gold = spine[["district_id", "iso3"]].copy()
+    gold["_afr"] = gold["iso3"].isin(afr_iso)
+    gold = gold.merge(u_ct.rename("_u"), on="district_id", how="left").merge(m_ct.rename("_m"), on="district_id", how="left")
+    # n_gold_deposits stays region-specific (USGS for Africa, MRDS elsewhere) so the
+    # count is internally consistent within a region; has_gold is the UNION of both
+    # sources so a district with gold in EITHER source is flagged (recovers African
+    # districts where only MRDS has a record).
+    gold["n_gold_deposits"] = np.where(gold["_afr"], gold["_u"].fillna(0), gold["_m"].fillna(0)).astype(int)
+    gold["has_gold"] = ((gold["_u"].fillna(0) > 0) | (gold["_m"].fillna(0) > 0)).astype(int)
+    out = out.merge(gold[["district_id", "n_gold_deposits", "has_gold"]], on="district_id", how="left")
+
     out = out.sort_values("district_id").reset_index(drop=True)
     out.to_parquet(OUT, index=False)
 
     cw = pd.read_csv(ROOT / "reference" / "iso3_region_crosswalk.csv")
     log.info("wrote %s: %d districts", OUT.name, len(out))
-    log.info("has_oil_gas=1: %d | has_diamond=1: %d | has_lootable_diamond=1: %d | any mineral: %d",
-             int(out["has_oil_gas"].sum()), int(out["has_diamond"].sum()),
-             int(out["has_lootable_diamond"].sum()), int((out["n_mineral_deposits"] > 0).sum()))
+    log.info("has_oil_gas=1: %d | has_diamond=1: %d | has_lootable_diamond=1: %d | has_gold=1: %d | any mineral: %d",
+             int(out["has_oil_gas"].sum()), int(out["has_diamond"].sum()), int(out["has_lootable_diamond"].sum()),
+             int(out["has_gold"].sum()), int((out["n_mineral_deposits"] > 0).sum()))
 
 
 if __name__ == "__main__":

@@ -1,2 +1,2 @@
 filename	url	retrieved_utc	bytes	sha256
-mrds-csv.zip	https://mrdata.usgs.gov/mrds/mrds-csv.zip	2026-07-14T00:34:41Z	25791223	31be4baaa86b082787bc74989146183db21badf7157db39b3f0a6fe0b38a5477
+mrds-csv.zip	https://mrdata.usgs.gov/mrds/mrds-csv.zip	2026-07-14T15:54:24Z	25791223	31be4baaa86b082787bc74989146183db21badf7157db39b3f0a6fe0b38a5477

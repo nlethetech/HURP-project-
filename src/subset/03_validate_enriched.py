@@ -154,6 +154,12 @@ def main() -> int:
     chk("Botswana diamonds are NON-lootable (kimberlite)",
         (bwa["has_diamond"] == 1).any() and (bwa["has_lootable_diamond"] == 1).sum() == 0)
     chk("resources zero-filled census (has_oil_gas all 79)", df[df["has_oil_gas"].notna()]["iso3"].nunique() == 79)
+    # gold: African artisanal-gold gap filled via USGS (MRDS alone had Mali=4)
+    chk("Mali has gold (USGS Africa fills the MRDS gap)", (df[df["iso3"] == "MLI"]["has_gold"] == 1).any())
+    chk("Burkina/Ghana/DRC/Tanzania gold present",
+        all((df[df["iso3"] == c]["has_gold"] == 1).any() for c in ["BFA", "GHA", "COD", "TZA"]))
+    chk("Americas gold present (MRDS): Peru & Colombia", (df[df["iso3"] == "PER"]["has_gold"] == 1).any() and (df[df["iso3"] == "COL"]["has_gold"] == 1).any())
+    chk("has_gold covers all 79 (census, 0/1)", df[df["has_gold"].notna()]["iso3"].nunique() == 79 and set(df["has_gold"].dropna().unique()) <= {0, 1})
     # ethnic exclusion: South Africa apartheid -> democracy
     za_ex = df[df["iso3"] == "ZAF"].groupby("year")["share_area_excluded"].mean()
     chk("South Africa excluded-share fell after apartheid (1990 >> 2000)", za_ex.get(1990, 0) > 0.5 and za_ex.get(2000, 1) < 0.2)
@@ -187,7 +193,7 @@ def main() -> int:
 
     # --- base panel intact ---
     chk("base conflict column intact", "n_events_total" in df.columns and df["n_events_total"].notna().any())
-    chk("column count == 173", df.shape[1] == 173, str(df.shape[1]))
+    chk("column count == 175", df.shape[1] == 175, str(df.shape[1]))
 
     n_pass = sum(v for _, v in CHECKS)
     print(f"\n{n_pass}/{len(CHECKS)} checks passed")

@@ -514,6 +514,8 @@ East-African oil frontier (Uganda 2006, Kenya 2012) → those are false zeros.
 | `has_diamond` / `n_diamond_deposits` | Any / count of diamond deposits. |
 | `n_diamond_primary` / `n_diamond_secondary` | Kimberlite (primary) vs alluvial (secondary). |
 | `has_lootable_diamond` | 1 if any SECONDARY (alluvial) OR MIXED deposit (both carry an alluvial, easily-looted component) — the conflict-financing flag (e.g. Sierra Leone = 1, Botswana kimberlite = 0). |
+| `has_gold` | 1 if the district has any gold deposit/mine — a major conflict-financing mineral. The **union of both sources** (USGS Mineral Industries GIS of Africa + USGS MRDS), so it can be 1 even where `n_gold_deposits` is 0 (an African district covered only by MRDS). The robust cross-region presence flag. |
+| `n_gold_deposits` | Count of gold sites: **Africa** from USGS GIS (facilities + deposits + exploration, de-duplicated), **the Americas** from MRDS. The two sources differ in density → use *within-region*, not cross-region. Small/emerging producers absent from the source (e.g. Rwanda, Benin) read 0; rare offshore island points are dropped by the strict spatial join. |
 | `has_oil_gas` vs `has_oil`/`has_gas` | `has_oil_gas` flags any oil/gas field present; `has_oil`/`has_gas` flag the *known* type. A field with RESINFO `---` (unknown type) sets `has_oil_gas=1` while both type flags stay 0 (a real field of undocumented type, not a contradiction). |
 | `n_mineral_deposits` | USGS MRDS deposits in the district. **US-biased; undercounts outside North America** — informational. |
 
