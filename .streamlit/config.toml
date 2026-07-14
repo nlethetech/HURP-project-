@@ -1,0 +1,16 @@
+[theme]
+base = "dark"
+primaryColor = "#e0a53d"
+backgroundColor = "#0e1013"
+secondaryBackgroundColor = "#16191e"
+textColor = "#e7e3d8"
+font = "sans serif"
+
+[server]
+headless = true
+port = 8501
+fileWatcherType = "none"
+maxMessageSize = 300
+
+[browser]
+gatherUsageStats = false
