@@ -65,6 +65,7 @@ MARKET_ACCESS = ROOT / "data" / "interim" / "market_access.parquet"
 RESOURCES = ROOT / "data" / "interim" / "resources.parquet"
 ETHNIC = ROOT / "data" / "interim" / "ethnic_epr.parquet"
 FOOD_INSEC = ROOT / "data" / "interim" / "food_insecurity.parquet"
+FAOSTAT_AG = ROOT / "data" / "interim" / "faostat_ag.parquet"
 OUT = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean_enriched.parquet"
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -137,6 +138,13 @@ def main() -> None:
         t = pd.read_parquet(path)[["district_id"] + cols]  # district-constant -> broadcast to all years
         df = df.merge(t, on="district_id", how="left")
         assert len(df) == n0, f"row count changed joining {path.name}"
+
+    # --- FAOSTAT agricultural output (country-year, iso3_broadcast; all fao_* cols) ---
+    if not FAOSTAT_AG.exists():
+        raise SystemExit(f"missing input {FAOSTAT_AG} — run src/cleaning/24_faostat_ag.py first")
+    fao = pd.read_parquet(FAOSTAT_AG)
+    df = df.merge(fao, on=["iso3", "year"], how="left")
+    assert len(df) == n0, "row count changed joining faostat_ag"
 
     # Pest sources run to 2026 but the panel ends 2025. Drop out-of-window obs
     # EXPLICITLY (log any African-study losses) and recompute first-detection ONLY

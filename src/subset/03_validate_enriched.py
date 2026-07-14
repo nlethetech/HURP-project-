@@ -171,9 +171,23 @@ def main() -> int:
         (df.loc[df["ipc_phase_max"].notna(), "ipc_crisis_flag"] ==
          (df.loc[df["ipc_phase_max"].notna(), "ipc_phase_max"] >= 3).astype(int)).all())
 
+    # --- FAOSTAT agricultural output ---
+    chk("FAOSTAT cereal covers 75/79 (4 non-cereal island states NaN)",
+        df[df["fao_cereal_prod_t"].notna()]["iso3"].nunique() == 75)
+    chk("FAOSTAT 2025 NaN (bulk ends 2024, not carried)", df[df["year"] == 2025]["fao_cereal_prod_t"].isna().all())
+    chk("FAOSTAT not blanket zero-filled (mostly NaN or real values)", df["fao_maize_prod_t"].isna().any())
+    ng = df[(df["iso3"] == "NGA") & (df["year"] == 2020)]["fao_cassava_prod_t"]
+    chk("Nigeria 2020 cassava > 40M t (world's #1 producer)", (ng > 40_000_000).all() and len(ng) > 0)
+    br = df[(df["iso3"] == "BRA") & (df["year"] == 2020)]["fao_maize_prod_t"]
+    chk("Brazil 2020 maize > 50M t", (br > 50_000_000).all() and len(br) > 0)
+    chk("FAOSTAT cereal yield plausible (200-15000 kg/ha)",
+        df["fao_cereal_yield_kgha"].dropna().between(200, 15000).mean() > 0.99)
+    chk("Ethiopia FAOSTAT back-series recovered (1989 present via Ethiopia-PDR fix)",
+        df[(df["iso3"] == "ETH") & (df["year"] == 1989)]["fao_cereal_prod_t"].notna().any())
+
     # --- base panel intact ---
     chk("base conflict column intact", "n_events_total" in df.columns and df["n_events_total"].notna().any())
-    chk("column count == 148", df.shape[1] == 148, str(df.shape[1]))
+    chk("column count == 173", df.shape[1] == 173, str(df.shape[1]))
 
     n_pass = sum(v for _, v in CHECKS)
     print(f"\n{n_pass}/{len(CHECKS)} checks passed")

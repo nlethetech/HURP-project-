@@ -545,3 +545,29 @@ Same-country overlaps only (border slivers of a neighbour's FEWS unit dropped).
 | `ipc_crisis_flag` | 1 if `ipc_phase_max ≥ 3`. |
 | `ipc_n_reports` | Number of FEWS phase polygons intersecting the district that year. |
 | `fews_covered` | 1 where FEWS monitored (else the row is absent → NaN after merge). |
+
+---
+
+## Agriculture — FAOSTAT QCL (study subset, country-year)
+
+Agricultural output from FAOSTAT "Production: Crops and livestock products" (QCL),
+built by `src/cleaning/24_faostat_ag.py` from the bulk download already fetched by
+`src/acquisition/04_download_faostat_qcl.py`. Country-year, iso3_broadcast,
+TIME-VARYING; NaN where a country-year does not report the item (never
+zero-filled; a genuine FAOSTAT 0 is kept as 0). 1961–2024 (2025 NaN). The
+**complete** long table (every crop/livestock item × Production/Area/Yield, all
+79 countries, with an `is_aggregate` flag) is `data/interim/faostat_ag_long.parquet`;
+the panel carries the headline measures below.
+
+| Variable | Definition |
+|----------|------------|
+| `fao_cereal_prod_t` / `fao_roots_tubers_prod_t` / `fao_pulses_prod_t` / `fao_fruit_prod_t` / `fao_vegetables_prod_t` | FAO group-total production (tonnes) for the food group. |
+| `fao_meat_total_prod_t` / `fao_milk_total_prod_t` | Total meat / milk production (tonnes) — livestock output. |
+| `fao_cereal_area_ha` / `fao_cereal_yield_kgha` | Total cereal area harvested (ha) and cereal yield (kg/ha). |
+| `fao_{maize,rice,wheat,sorghum,millet,cassava,beans,groundnuts}_prod_t` | Production (tonnes) of the 8 headline staple crops. |
+| `fao_{...}_yield_kgha` | Yield (kg/ha) of the same 8 staples. |
+
+Coverage: all 79 countries appear in FAOSTAT; `fao_cereal_prod_t` is NaN for 4
+non-cereal island/coastal states (Equatorial Guinea, St Kitts, St Lucia,
+Seychelles) that grow roots/tree crops instead. For any crop beyond the headline
+staples, join `faostat_ag_long.parquet` on (iso3, year, item).

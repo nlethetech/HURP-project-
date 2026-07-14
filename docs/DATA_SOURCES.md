@@ -717,3 +717,19 @@ Acquisition: `src/acquisition/18_download_cru_temp.py`, `19_download_travel_time
 - **License**: FEWS NET Public data — free, attribution "Source: FEWS NET, fews.net". Raw gitignored.
 - **Gotchas**: coverage-masked (NaN ≠ 0); same-country overlaps only (drop border slivers); "Not Mapped"/"Missing Data" → NaN. Partly an OUTCOME of conflict — a context/moderator, not a clean exogenous lever.
 - **Facts verified**: 2026-07-13 (South Sudan 2017 famine = phase 5; Haiti covered).
+
+### FAOSTAT QCL — agricultural output (study enrichment)
+- **Provider**: FAO, FAOSTAT "Production: Crops and livestock products" (QCL).
+- **Role**: national agricultural output (production, area, yield) — the
+  agriculture side of the two-way conflict↔agriculture question. `fao_*` panel
+  columns + the complete `faostat_ag_long.parquet` companion.
+- **Download**: bulk `Production_Crops_Livestock_E_All_Data_(Normalized).zip`
+  (reuses the file fetched by `src/acquisition/04_download_faostat_qcl.py`).
+- **Coverage**: all 79 study countries, 1961–2024 (2025 NaN). Elements Production
+  (t), Area harvested (ha), Yield (kg/ha).
+- **License**: CC BY 4.0 (FAOSTAT). Raw gitignored; MANIFEST from lane 04.
+- **Gotchas**: M49→ISO3 (Sudan-former M49 736→SDN for pre-2012); FAO group-total
+  items flagged `is_aggregate` (never sum with members); "Oilcrops/Crops primary"
+  totals carry no data rows in the bulk snapshot. Values cross-checked: Nigeria
+  cassava 55.6M t (world #1), Brazil maize 104M t, Ethiopia cereals 32.5M t.
+- **Facts verified**: 2026-07-14 (live parse; e2e).
