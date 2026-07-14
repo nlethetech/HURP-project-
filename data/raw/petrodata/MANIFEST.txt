@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+petrodata_v12.zip	https://cdn.cloud.prio.org/files/72fca956-7b50-4cf6-bdb3-86ba2830301f/PETRODATA%20v12%20Data.zip	2026-07-14T00:34:41Z	4812219	1e97a99567c4e03efc01ba8781d4335c7aa9af77e189ee14f6fb6d58a75dd791

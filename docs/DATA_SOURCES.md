@@ -604,3 +604,116 @@ never zero-filled. Acquisition: `src/acquisition/13_download_faw.py`,
   agriculturally-relevant signal. Survey-effort bias: presence-only within the
   belt; unmonitored = NaN, not zero.
 - **Facts verified**: 2026-07-09 (live pull; 98.2% of points joined a district).
+
+## Country-year mediators: state capacity, regime, repression (study subset)
+
+Country-year, iso3_broadcast, TIME-VARYING, NaN where unobserved (never
+zero-filled). Acquisition: `src/acquisition/15_download_state_capacity.py`,
+`16_download_regime_repression.py`; cleaning: `src/cleaning/15_state_capacity.py`,
+`16_regime.py`, `17_repression.py`. New deps: `pyreadr` (V-Dem .RData),
+`pyreadstat` (Polity .sav).
+
+### ICTD/UNU-WIDER Government Revenue Dataset (GRD 2025) — fiscal state capacity
+- **Provider**: UNU-WIDER / International Centre for Tax and Development.
+- **Role**: tax & revenue as % of GDP → `grd_tax_pct_gdp` and siblings. Fiscal
+  capacity = the state's ability to extract revenue; a shock-to-conflict mediator.
+- **Download**: https://www.wider.unu.edu/sites/default/files/Data/UNUWIDERGRD_2025.xlsx
+  (sheet "Merged" = recommended one-row-per-country-year series). **Needs a
+  browser User-Agent + Referer** (Azure gateway 403s bare curl); keyless otherwise.
+- **Coverage**: 76/79 tax series (Algeria/Egypt/South Sudan lack it → revenue
+  fallback), 1980–2023 (2024–2025 NaN). Values are GDP fractions → ×100.
+- **License**: open data; cite doi:10.35188/UNU-WIDER/GRD-2025. Raw gitignored.
+- **Facts verified**: 2026-07-09 (live download; 79/79 present, units checked).
+
+### V-Dem v16 (Varieties of Democracy) — regime & democracy
+- **Provider**: V-Dem Institute, University of Gothenburg.
+- **Role**: `vdem_polyarchy/libdem/rule_of_law/corruption/regime` + `vdem_terr_control`.
+- **Download (keyless)**: https://raw.githubusercontent.com/vdeminstitute/vdemdata/master/data/vdem.RData
+  (the vdem.net CSV is email-gated; the GitHub mirror is not). Read via `pyreadr`.
+- **Coverage**: 72/79 (7 Caribbean microstates absent → NaN), 1789–2025.
+- **License**: CC BY-SA 4.0 (derived columns fine in a private repo; share-alike
+  binds only on public release). Cite Coppedge et al. (2026), V-Dem v16.
+- **Gotchas**: `vdem_corruption` is HIGH=more-corrupt (inverted vs democracy
+  indices). The `.RData` tracks a rolling `master` → the MANIFEST sha256 pins the
+  content; record the release tag. `country_text_id` ≈ ISO3.
+- **Facts verified**: 2026-07-09 (live download; variable names + coverage checked).
+
+### Polity5 (v2018) — regime
+- **Provider**: Center for Systemic Peace (Marshall & Gurr).
+- **Role**: `polity2` (−10..+10) + derived `anocracy_flag` (|polity2| ≤ 5).
+- **Download (keyless)**: https://www.systemicpeace.org/inscr/p5v2018.sav (read via `pyreadstat`).
+- **Coverage**: 69/79, **ends 2018** (2019–2025 NaN). `ccode`→iso3 via the QoG
+  `ccodecow`↔`ccodealp` bridge (reused from the colonial COW lane).
+- **License**: free academic use; cite Marshall & Gurr, Polity5 (2020).
+- **Gotchas**: use `polity2` (interpolated; −66/−77/−88 already NaN), not `polity`.
+- **Facts verified**: 2026-07-09 (live download; bridge coverage checked).
+
+### Political Terror Scale (PTS-2025) — state repression
+- **Provider**: Gibney, Haschke, Arnon, Pisanò, Barrett et al. (politicalterrorscale.org).
+- **Role**: `pts_amnesty/state/hrw` (1–5) + coalesced `pts_score` (State→Amnesty→HRW).
+- **Download (keyless)**: https://www.politicalterrorscale.org/Data/Files/PTS-2025.csv
+  (**Latin-1 encoded**, not UTF-8).
+- **Coverage**: 79/79, 1976–2024 (2025 NaN). iso3 = `WordBank_Code_A`; DR Congo
+  ships under legacy `ZAR` → remapped to `COD`.
+- **License**: CC BY-NC 4.0 (non-commercial; private research repo + derived
+  columns OK). Cite Gibney et al., PTS 1976–2024; Wood & Gibney (2010) HRQ 32(2).
+- **Design note**: repression is BOTH a driver and a consequence of conflict — a
+  mediator to lag (t−1), not a clean exogenous cause.
+- **Facts verified**: 2026-07-09 (live download; ZAR/COD + coverage checked).
+
+### UNHCR Refugee Data Finder + IDMC GIDD — displacement
+- **Providers**: UNHCR (Refugee Data Finder); IDMC (Global Internal Displacement Database).
+- **Role**: refugee/asylum/IDP stocks + return/new-displacement flows → the
+  displacement columns (both cause & consequence of conflict; mediator to lag).
+- **Download (keyless)**: UNHCR API `https://api.unhcr.org/population/v1/population/?limit=100000&yearFrom=1989&yearTo=2025&coo_all=true&columns=...` (key on RETURNED `coo_iso`=ISO3, NOT the `coo` request param). IDMC via HDX package `idmc_internal_displacement_conflict-violence_disasters` (xlsx sheet `1_Displacement_data`, keyed clean ISO3); the resource URL carries a version suffix (…-NN.xlsx) that changes on refresh, so `17_download_displacement.py` **resolves it at runtime** via the HDX package_show API.
+- **Coverage**: UNHCR origin totals 79/79, 1989–2025. IDMC 2008–2024 (2025 NaN); conflict-stock on the ~41 conflict-affected study countries (rest genuinely no conflict IDPs → NaN).
+- **License**: UNHCR CC BY 4.0; IDMC CC BY (HDX). Derived columns fine; raw gitignored.
+- **Gotchas**: keep stocks and flows in SEPARATE columns (never sum). UNHCR explicit reported 0 is a real 0; a missing origin-year is NaN. Reindexed to the panel by left-join (unobserved → NaN, never zero).
+- **Facts verified**: 2026-07-13 (live pull; Colombia 6.27M / Rwanda 2.26M / Haiti 1.57M cross-checked).
+
+## Spatial layers (study subset): temperature, market access, resources, ethnic exclusion
+
+Acquisition: `src/acquisition/18_download_cru_temp.py`, `19_download_travel_time.py`,
+`20_download_resources.py`, `21_download_epr.py`. Cleaning: `src/cleaning/19_temperature_cru.py`,
+`20_market_access.py`, `21_resources.py`, `22_ethnic_epr.py`.
+
+### CRU TS v4.09 — temperature
+- **Provider**: Climatic Research Unit, University of East Anglia.
+- **Role**: district annual mean temperature (`temp_mean`) + heat anomaly (`temp_anomaly`); a second exogenous weather shock.
+- **Download (keyless)**: UEA mirror, decade chunks `https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.09/cruts.2503051245.v4.09/tmp/cru_ts4.09.<decade>.tmp.dat.nc.gz` (the CEDA path is login-gated). Monthly 0.5° NetCDF → annual-mean raster → exactextract, mirroring the CHIRPS lane.
+- **Coverage**: global; 1989–2024 (2025 NaN). Africa/S.America 100%; a few micro-islands (St Lucia) fall in CRU sea cells → NaN.
+- **License**: OGL-UK-3.0 (redistributable, attribution). Cite Harris et al. 2020, Sci Data 7:109.
+- **Facts verified**: 2026-07-13 (live download; Niger 30°C / Chile 10°C / DRC 24°C sane).
+
+### Malaria Atlas Project — travel time to cities (2015)
+- **Provider**: Malaria Atlas Project (Weiss et al. 2018, Nature).
+- **Role**: district median/mean travel time to nearest city; market access + state reach.
+- **Download (keyless)**: GeoServer WCS 2.0.1, coverage `Accessibility__201501_Global_Travel_Time_to_Cities`, subset to two continental bboxes (Africa; South America + Caribbean) to avoid the multi-GB global grab.
+- **Coverage**: ~99.9% of study districts (13 micro-island districts NaN). TIME-INVARIANT (2015 snapshot). nodata −9999; value 0 = inside a city (valid).
+- **License**: CC BY 4.0. Cite Weiss, D.J. et al., Nature (2018).
+- **Facts verified**: 2026-07-13 (live WCS; median 0–6476 min).
+
+### PRIO PETRODATA + DIADATA, USGS MRDS — natural resources
+- **Providers**: PRIO (PETRODATA onshore oil/gas polygons; DIADATA diamond deposits); USGS (MRDS mineral deposits, public domain).
+- **Role**: resource-endowment / lootable-resource moderators (oil/gas, diamonds w/ primary-kimberlite vs secondary-alluvial=lootable split, mineral deposits).
+- **Download (keyless)**: PRIO CDN zips (`cdn.cloud.prio.org/files/…`); USGS `https://mrdata.usgs.gov/mrds/mrds-csv.zip`.
+- **Coverage**: PETRODATA/DIADATA global compilations (2003/2005 vintages → East-African post-2003 oil is a false zero). Point/polygon → district via spatial join; district-constant. MRDS US-biased (informational).
+- **License**: PRIO academic use + citation (Lujala et al. 2007; Gilmore et al. 2005) — raw gitignored, ship derived columns; MRDS public domain.
+- **Facts verified**: 2026-07-13 (Sierra Leone alluvial=lootable, Botswana kimberlite≠lootable, Nigeria oil in 178 districts).
+
+### EPR-Core + GeoEPR (ETH Zurich / ICR) — ethnic exclusion
+- **Provider**: ETH Zurich, International Conflict Research (icr.ethz.ch/data/epr), v2021.
+- **Role**: district share under politically-EXCLUDED ethnic groups + fractionalization; strongest subnational conflict driver.
+- **Download (keyless)**: `https://icr.ethz.ch/data/epr/core/EPR-2021.csv` + `.../geoepr/GeoEPR-2021.zip`.
+- **Coverage**: 67/79 (12 homogeneous / no-politically-relevant-group countries → NaN); 1989–2021 (2022–2025 NaN). GeoEPR polygons overlaid on districts in an equal-area CRS (EPSG:6933) with `make_valid`; EPR-Core status joined per (group, year).
+- **License**: no explicit CC tag; academic use, cite Vogt et al. (2015) JCR 59(7). Ship derived columns only; raw gitignored.
+- **Facts verified**: 2026-07-13 (South Africa excluded-share 0.96 apartheid → 0.0 post-1994; Sudan 0.67).
+
+### FEWS NET IPC — food insecurity
+- **Provider**: FEWS NET (USAID Famine Early Warning Systems Network), FDW.
+- **Role**: subnational acute food-insecurity phase (`ipc_phase_max` etc.); bridges agricultural output and conflict.
+- **Download (keyless)**: FDW REST API — dates via `/api/ipcphase/?country_code={ISO2}&scenario=CS`; phase polygons via `/api/ipcphasemap/?country={ISO2}&scenario=CS&collection_date={date}&format=geojson`. Acquisition iterates the study countries × their reporting dates.
+- **Coverage**: 25 study countries, 2011–2025. Africa-heavy; **Haiti** the Americas reach (Colombia/Venezuela 2026-only, out of window). Uses observed CS (Current Status), never ML1/ML2 forecasts.
+- **License**: FEWS NET Public data — free, attribution "Source: FEWS NET, fews.net". Raw gitignored.
+- **Gotchas**: coverage-masked (NaN ≠ 0); same-country overlaps only (drop border slivers); "Not Mapped"/"Missing Data" → NaN. Partly an OUTCOME of conflict — a context/moderator, not a clean exogenous lever.
+- **Facts verified**: 2026-07-13 (South Sudan 2017 famine = phase 5; Haiti covered).

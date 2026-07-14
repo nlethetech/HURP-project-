@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+p5v2018.sav	https://www.systemicpeace.org/inscr/p5v2018.sav	2026-07-09T18:11:43Z	1447819	c0405a807777610a65fe430e4b4828fda16717afc4b5d6e34bf56f1ca100f2f6

@@ -1,0 +1,3 @@
+filename	url	retrieved_utc	bytes	sha256
+EPR-2021.csv	https://icr.ethz.ch/data/epr/core/EPR-2021.csv	2026-07-13T23:32:19Z	331121	98e2d56431f55355d5d69deaa28c9063a49e859722bbb6d777a541ee831bcfe0
+GeoEPR-2021.zip	https://icr.ethz.ch/data/epr/geoepr/GeoEPR-2021.zip	2026-07-13T23:32:19Z	14113583	68cd06686cf910e544e990cf82c83513cfb03e27cb80b36a7720484901b1c023

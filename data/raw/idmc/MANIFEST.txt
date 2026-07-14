@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+idmc_gidd.xlsx	https://data.humdata.org/dataset/0b1c4dc1-6ae5-4e2d-8e32-2111d0e10697/resource/761feae0-f812-4f0f-8e38-54b5526baf85/download/idmc_internal_displacement_conflict-violence_disasters-39.xlsx	2026-07-13T22:52:40Z	480343	aef0742ce517d67512e3b7e24f8d4fb9b3cd9e94f960e4940ab7b0c6e76651be

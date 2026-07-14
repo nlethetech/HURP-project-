@@ -394,3 +394,154 @@ front are weather/wave-driven, not conflict-caused — that is what lets them
 identify the *agriculture → conflict* arrow. Interact with the colonial moderators
 and read as an **Africa-subsample** result; the Americas are honestly uncovered on
 pest.
+
+---
+
+## Country-year mediators: state capacity, regime, repression (study subset)
+
+Three country-year layers added by `src/cleaning/15_state_capacity.py`,
+`16_regime.py`, `17_repression.py` and joined by `src/subset/02_enrich_study.py`.
+All are **iso3_broadcast** (one country-year value copied to every district of
+that country-year), **TIME-VARYING**, and **NaN where unobserved — never
+zero-filled**. They are *mediators* between the shocks and conflict (why a shock
+does or doesn't become violence); several are partly endogenous to conflict, so
+**lag them (t−1); do not treat as clean exogenous causes.** Covers all 79 where
+the source does (microstates thin — see per-column notes).
+
+### State capacity — ICTD/UNU-WIDER Government Revenue Dataset (GRD 2025)
+Fiscal capacity: the state's ability to raise revenue. Values are % of GDP.
+Coverage: tax series 76/79 (Algeria, Egypt, South Sudan lack it → use revenue),
+1989–2023 (2024–2025 NaN).
+
+| Variable | Definition | Notes |
+|----------|------------|-------|
+| `grd_tax_pct_gdp` | Total taxes as % of GDP (PRIMARY fiscal-capacity measure). | |
+| `grd_nonresource_tax_pct_gdp` | Non-resource taxes as % of GDP. | Least price-endogenous extractive proxy. |
+| `grd_totrev_pct_gdp` | Total revenue as % of GDP. | Broader fallback where tax is missing. |
+| `grd_resource_rev_pct_gdp` | Resource revenue as % of GDP. | High for petrostates (Nigeria, Gulf). |
+| `grd_gov_level` | `general` or `central` — which government level supplied the row. | GRD "Merged" series (best available per country-year). |
+| `grd_quality_flag` | 1 if GRD flagged any data-quality caution for the observation. | |
+
+### Regime & democracy — V-Dem v16 + Polity5
+Coverage: V-Dem 72/79 (7 Caribbean microstates — Antigua, Bahamas, Dominica,
+Grenada, St Kitts, St Lucia, St Vincent — absent → NaN), 1989–2025. Polity 69/79,
+1989–2018 (2019–2025 NaN; project ended).
+
+| Variable | Definition | Notes |
+|----------|------------|-------|
+| `vdem_polyarchy` | V-Dem electoral democracy index (0–1). | |
+| `vdem_libdem` | V-Dem liberal democracy index (0–1). | |
+| `vdem_rule_of_law` | V-Dem rule-of-law index (0–1). | |
+| `vdem_corruption` | V-Dem political corruption index (0–1). | **HIGH = MORE corrupt** — inverted vs the democracy indices; do not rescale silently. |
+| `vdem_regime` | Regimes of the World: 0 closed autocracy, 1 electoral autocracy, 2 electoral democracy, 3 liberal democracy. | Categorical. |
+| `vdem_terr_control` | State authority over territory (% of territory). | The coercive/territorial complement to the fiscal state-capacity measures. |
+| `polity2` | Polity5 combined score, −10 (full autocracy) to +10 (full democracy). | Interpolated series; −66/−77/−88 already resolved to NaN. |
+| `anocracy_flag` | 1 if `|polity2| ≤ 5` (anocracy — most conflict-prone), else 0; NaN where polity2 NaN. | |
+
+### State repression — Political Terror Scale (PTS-2025)
+Physical-integrity repression, 1–5 (5 = worst). Coverage 79/79, 1989–2024
+(2025 NaN). DR Congo carried under legacy code `ZAR` → remapped to `COD`.
+
+| Variable | Definition | Notes |
+|----------|------------|-------|
+| `pts_amnesty` / `pts_state` / `pts_hrw` | PTS score from the Amnesty / US State Dept / HRW report (1–5). | State Dept (`pts_state`) is the most complete series. |
+| `pts_score` | Coalesced score: State Dept → Amnesty → HRW. | The main repression column. |
+| `pts_source` | Which source supplied `pts_score` (`S`/`A`/`H`). | Transparency flag. |
+
+### Displacement — UNHCR origins + IDMC GIDD
+Forced displacement, country-year, iso3_broadcast, TIME-VARYING, NaN where
+unobserved (never zero-filled; a missing IDMC row is not zero displacement).
+**Stocks and flows are separate columns — never sum them.** Both a cause and a
+consequence of conflict (mediator; lag it). Best Americas reach of the new
+layers (Colombia/Venezuela conflict IDPs, Haiti disaster+conflict). UNHCR origin
+totals 79/79; IDMC 2008–2024 (2025 NaN), conflict-stock on the ~41 conflict-
+affected study countries.
+
+| Variable | Definition | Source | Notes |
+|----------|------------|--------|-------|
+| `refugees_origin` | Refugees originating FROM the country (end-year stock). | UNHCR | 79/79. |
+| `asylum_seekers_origin` | Asylum-seekers originating from the country (stock). | UNHCR | |
+| `idp_stock_unhcr` | UNHCR-reported IDP stock. | UNHCR | Sparse pre-1993. |
+| `returned_refugees` | Refugees returned that year (FLOW). | UNHCR | Do not add to stocks. |
+| `returned_idps` | IDPs returned that year (FLOW). | UNHCR | |
+| `idp_stock_conflict` | IDPs displaced by conflict/violence (end-year STOCK). | IDMC GIDD | 2008+. |
+| `new_disp_conflict` | New conflict displacements that year (FLOW). | IDMC GIDD | 2009+; a consequence-of-conflict signal. |
+| `idp_stock_disaster` | IDPs displaced by disasters (STOCK). | IDMC GIDD | |
+| `new_disp_disaster` | New disaster displacements that year (FLOW). | IDMC GIDD | The plausibly-exogenous hazard shock. |
+
+---
+
+## Spatial layers (study subset): temperature, market access, resources, ethnic exclusion
+
+Four district-level layers joined by `src/subset/02_enrich_study.py`. Temperature
+and ethnic exclusion vary by (district_id, year); market access and resources are
+district-constant (broadcast to all years). All NaN where unobserved (never
+zero-filled), except the resource *census* counts (see below).
+
+### Temperature — CRU TS v4.09 (`src/cleaning/19_temperature_cru.py`)
+Area-weighted district annual mean temperature + a standardized heat anomaly. A
+second exogenous weather shock alongside rainfall. Global; 1989–2024 (2025 NaN,
+CRU ends 2024). ~5% of rows NaN (2025 + micro-islands with no CRU land cell).
+
+| Variable | Definition |
+|----------|------------|
+| `temp_mean` | Area-weighted district-year annual mean near-surface temperature (°C). NaN outside CRU land / 2025. |
+| `temp_anomaly` | `(temp_mean − district 1989–2010 mean) / district 1989–2010 sd`; standardized heat deviation. NaN where the baseline has <2 years or sd=0. |
+
+### Market access — MAP 2015 travel-time-to-cities (`src/cleaning/20_market_access.py`)
+District travel time to the nearest city (minutes), 2015 snapshot. TIME-INVARIANT;
+proxy for farm market access AND state reach. 0 minutes = inside a city (a valid
+value, not nodata).
+
+| Variable | Definition |
+|----------|------------|
+| `travel_time_to_city_min_median` | District median travel-time to a city (min), 2015. NaN for micro-islands with no land cell. |
+| `travel_time_to_city_min_mean` | District mean (outlier-sensitive; prefer median). |
+| `travel_time_to_city_log1p` | `log1p(median)` for right-skewed regressors. |
+| `market_access_snapshot_year` | 2015 (provenance; back-projecting onto 1989 is an anachronism — a static moderator). |
+
+### Natural resources — PRIO PETRODATA + DIADATA + USGS MRDS (`src/cleaning/21_resources.py`)
+Static geological endowment (the "greed"/lootable-resource channel). District-
+constant. **Count columns are zero-filled** (global census: no intersecting
+deposit = a true 0). Caveat: PETRODATA's 2003 vintage misses the post-2003
+East-African oil frontier (Uganda 2006, Kenya 2012) → those are false zeros.
+
+| Variable | Definition |
+|----------|------------|
+| `has_oil_gas` / `n_oil_gas_fields` | Any / count of onshore oil-gas field polygons intersecting the district. |
+| `has_oil` / `has_gas` | Field type present (from RESINFO). |
+| `oil_gas_first_discovery_year` | Earliest field discovery year in the district (NaN if none/unknown). |
+| `has_diamond` / `n_diamond_deposits` | Any / count of diamond deposits. |
+| `n_diamond_primary` / `n_diamond_secondary` | Kimberlite (primary) vs alluvial (secondary). |
+| `has_lootable_diamond` | 1 if any SECONDARY (alluvial) OR MIXED deposit (both carry an alluvial, easily-looted component) — the conflict-financing flag (e.g. Sierra Leone = 1, Botswana kimberlite = 0). |
+| `has_oil_gas` vs `has_oil`/`has_gas` | `has_oil_gas` flags any oil/gas field present; `has_oil`/`has_gas` flag the *known* type. A field with RESINFO `---` (unknown type) sets `has_oil_gas=1` while both type flags stay 0 (a real field of undocumented type, not a contradiction). |
+| `n_mineral_deposits` | USGS MRDS deposits in the district. **US-biased; undercounts outside North America** — informational. |
+
+### Ethnic exclusion — EPR-Core + GeoEPR (`src/cleaning/22_ethnic_epr.py`)
+Share of a district settled by politically EXCLUDED ethnic groups, by year. The
+strongest subnational political conflict driver; adds within-country variation
+the colonial layer lacks. Coverage 67/79 (12 homogeneous / no-politically-
+relevant-group countries → NaN); 1989–2021 (2022–2025 NaN, EPR ends 2021).
+
+| Variable | Definition |
+|----------|------------|
+| `share_area_excluded` | District area share under groups coded POWERLESS/DISCRIMINATED/SELF-EXCLUSION (0–1). E.g. South Africa 0.96 (1990, apartheid) → 0.0 (2000). |
+| `any_excluded` | 1 if any excluded group settles the district. |
+| `n_groups_overlap` | Distinct EPR groups overlapping the district that year. |
+| `ethnic_fractionalization` | `1 − Σ(group area share)²` within the district (within-district ethnic mixing; low where one group dominates). |
+
+### Food insecurity — FEWS NET IPC phases (`src/cleaning/23_food_insecurity.py`)
+Subnational acute food-insecurity phase (1 Minimal … 5 Famine), the literal
+bridge between agricultural output and conflict. Coverage-masked (NaN where not
+monitored — never zero-filled). 25 study countries, 2011–2025; Africa-heavy with
+**Haiti** the Americas reach (Colombia/Venezuela are 2026-only → out of window).
+Same-country overlaps only (border slivers of a neighbour's FEWS unit dropped).
+
+| Variable | Definition |
+|----------|------------|
+| `ipc_phase_max` | Worst IPC phase over units overlapping the district that year (1–5). |
+| `ipc_phase_modal` | Area-weighted majority phase. |
+| `ipc_phase3plus_area_share` | District area share in Crisis+ (phase ≥ 3), 0–1. |
+| `ipc_crisis_flag` | 1 if `ipc_phase_max ≥ 3`. |
+| `ipc_n_reports` | Number of FEWS phase polygons intersecting the district that year. |
+| `fews_covered` | 1 where FEWS monitored (else the row is absent → NaN after merge). |

@@ -1,0 +1,6 @@
+filename	url	retrieved_utc	bytes	sha256
+cru_ts4.09.1981.1990.tmp.dat.nc.gz	https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.09/cruts.2503051245.v4.09/tmp/cru_ts4.09.1981.1990.tmp.dat.nc.gz	2026-07-13T23:05:46Z	35565650	dfe52c675b57c86d1ebc4030e1a7356f0f5df18d5e1fef9c4ff37cc33c4cc9c1
+cru_ts4.09.1991.2000.tmp.dat.nc.gz	https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.09/cruts.2503051245.v4.09/tmp/cru_ts4.09.1991.2000.tmp.dat.nc.gz	2026-07-13T23:05:46Z	36439913	9a92933d9c285bba9fa574267df84d1de8cf3670e2072f1f9282cb0bb4f605d6
+cru_ts4.09.2001.2010.tmp.dat.nc.gz	https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.09/cruts.2503051245.v4.09/tmp/cru_ts4.09.2001.2010.tmp.dat.nc.gz	2026-07-13T23:05:46Z	36551017	ecb8dfd2d7f7c7de2255d30342ecb377239e338ecf572819ea68505eb20b733b
+cru_ts4.09.2011.2020.tmp.dat.nc.gz	https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.09/cruts.2503051245.v4.09/tmp/cru_ts4.09.2011.2020.tmp.dat.nc.gz	2026-07-13T23:05:46Z	36530307	d27cf0a3839efb26bbc251f7a67591d36587f2c8ae0f417758e20f9669272a20
+cru_ts4.09.2021.2024.tmp.dat.nc.gz	https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.09/cruts.2503051245.v4.09/tmp/cru_ts4.09.2021.2024.tmp.dat.nc.gz	2026-07-13T23:05:46Z	14677655	3b364cbb93894ff486264ee0736c1f321994847557c5501fbc9efc9f8a38f95e

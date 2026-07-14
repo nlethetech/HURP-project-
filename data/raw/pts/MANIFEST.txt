@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+PTS-2025.csv	https://www.politicalterrorscale.org/Data/Files/PTS-2025.csv	2026-07-09T18:11:43Z	661491	4038b17dc780939583c2aa053e9c05ca9a782bdcd7167552c8c6082f92e22e26

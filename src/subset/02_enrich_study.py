@@ -11,15 +11,18 @@ Layers joined
 -------------
     data/interim/colonial.parquet          country-level colonial moderators
         (join on iso3; time-invariant except the independence-year seed).
+    data/interim/{state_capacity,regime,repression}.parquet  country-year
+        mediators (join on iso3+year; iso3_broadcast, TIME-VARYING; NaN where
+        unobserved, never zero-filled).
     data/interim/faw_district_year.parquet  fall-armyworm monitoring (Africa)
         (join on district_id+year for observations; district_id for the
          first-detection-year constant). NON-monitored district-years stay NaN.
     data/interim/locust_district_year.parquet  desert-locust swarm+band (Africa)
         (same join pattern). NON-surveyed district-years stay NaN.
 
-Pest layers are MONITORING/SURVEY data: absence of a row means not-observed, NOT
-pest-free, so they are NEVER zero-filled across the frame — only the observed
-district-years carry values; everything else is NaN by construction.
+Pest and mediator layers are MONITORING/SURVEY/reported data: absence of a row
+means not-observed, NOT zero, so they are NEVER zero-filled across the frame —
+only observed rows carry values; everything else is NaN by construction.
 
 Derived here
 ------------
@@ -31,9 +34,10 @@ Derived here
 Inputs / Output
 ---------------
     in:  data/processed/panel_africa_samerica_caribbean.parquet   (study base, 63 cols)
-         data/interim/{colonial,faw_district_year,locust_district_year}.parquet
+         data/interim/{colonial,state_capacity,regime,repression,
+                       faw_district_year,locust_district_year}.parquet
     out: data/processed/panel_africa_samerica_caribbean_enriched.parquet
-         One row per (district_id, year); base + colonial + pest layers.
+         One row per (district_id, year); base + colonial + mediator + pest layers.
 
 Run
 ---
@@ -52,6 +56,15 @@ BASE = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean.parquet"
 COLONIAL = ROOT / "data" / "interim" / "colonial.parquet"
 FAW = ROOT / "data" / "interim" / "faw_district_year.parquet"
 LOCUST = ROOT / "data" / "interim" / "locust_district_year.parquet"
+STATE_CAP = ROOT / "data" / "interim" / "state_capacity.parquet"
+REGIME = ROOT / "data" / "interim" / "regime.parquet"
+REPRESSION = ROOT / "data" / "interim" / "repression.parquet"
+DISPLACEMENT = ROOT / "data" / "interim" / "displacement.parquet"
+TEMPERATURE = ROOT / "data" / "interim" / "temperature_cru.parquet"
+MARKET_ACCESS = ROOT / "data" / "interim" / "market_access.parquet"
+RESOURCES = ROOT / "data" / "interim" / "resources.parquet"
+ETHNIC = ROOT / "data" / "interim" / "ethnic_epr.parquet"
+FOOD_INSEC = ROOT / "data" / "interim" / "food_insecurity.parquet"
 OUT = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean_enriched.parquet"
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -66,6 +79,26 @@ COLONIAL_COLS = [
 # Pest observation columns joined on (district_id, year); NaN where not observed.
 FAW_OBS = ["faw_n_trap_checks", "faw_confirmed_sum", "faw_suspconf_sum", "faw_present", "faw_catch_rate"]
 LOCUST_OBS = ["dl_swarm_obs", "dl_band_obs", "dl_gregarious_obs", "dl_area_treated_ha", "dl_present_flag"]
+# Country-year mediator layers joined on (iso3, year); NaN where unobserved, never zero-filled.
+STATE_CAP_COLS = ["grd_tax_pct_gdp", "grd_nonresource_tax_pct_gdp", "grd_totrev_pct_gdp",
+                  "grd_resource_rev_pct_gdp", "grd_gov_level", "grd_quality_flag"]
+REGIME_COLS = ["vdem_polyarchy", "vdem_libdem", "vdem_rule_of_law", "vdem_corruption",
+               "vdem_regime", "vdem_terr_control", "polity2", "anocracy_flag"]
+REPRESSION_COLS = ["pts_amnesty", "pts_state", "pts_hrw", "pts_score", "pts_source"]
+DISPLACEMENT_COLS = ["refugees_origin", "asylum_seekers_origin", "idp_stock_unhcr",
+                     "returned_refugees", "returned_idps", "idp_stock_conflict",
+                     "new_disp_conflict", "idp_stock_disaster", "new_disp_disaster"]
+# Spatial layers. Temperature + ethnic join on (district_id, year); market access +
+# resources are district-constant (join on district_id, broadcast to all years).
+TEMPERATURE_COLS = ["temp_mean", "temp_anomaly"]
+ETHNIC_COLS = ["n_groups_overlap", "share_area_excluded", "ethnic_fractionalization", "any_excluded"]
+FOOD_COLS = ["ipc_phase_max", "ipc_phase_modal", "ipc_n_reports", "ipc_phase3plus_area_share",
+             "ipc_crisis_flag", "fews_covered"]
+MARKET_COLS = ["travel_time_to_city_min_median", "travel_time_to_city_min_mean",
+               "travel_time_to_city_log1p", "market_access_snapshot_year"]
+RESOURCE_COLS = ["has_oil_gas", "n_oil_gas_fields", "has_oil", "has_gas", "oil_gas_first_discovery_year",
+                 "has_diamond", "n_diamond_deposits", "n_diamond_secondary", "n_diamond_primary",
+                 "has_lootable_diamond", "n_mineral_deposits"]
 
 
 def main() -> None:
@@ -81,6 +114,29 @@ def main() -> None:
     df = df.merge(col, on="iso3", how="left")
     assert len(df) == n0, "row count changed on colonial join"
     df["years_since_independence"] = df["year"] - df["independence_year"]
+
+    # --- Country-year mediators (iso3_broadcast; NaN where unobserved, never zero-filled) ---
+    for path, cols in [(STATE_CAP, STATE_CAP_COLS), (REGIME, REGIME_COLS),
+                       (REPRESSION, REPRESSION_COLS), (DISPLACEMENT, DISPLACEMENT_COLS)]:
+        if not path.exists():
+            raise SystemExit(f"missing input {path} — run its cleaning lane first")
+        t = pd.read_parquet(path)[["iso3", "year"] + cols]
+        df = df.merge(t, on=["iso3", "year"], how="left")
+        assert len(df) == n0, f"row count changed joining {path.name}"
+
+    # --- Spatial layers (district-level; NaN where unobserved, never zero-filled) ---
+    for path, cols in [(TEMPERATURE, TEMPERATURE_COLS), (ETHNIC, ETHNIC_COLS), (FOOD_INSEC, FOOD_COLS)]:
+        if not path.exists():
+            raise SystemExit(f"missing input {path} — run its cleaning lane first")
+        t = pd.read_parquet(path)[["district_id", "year"] + cols]
+        df = df.merge(t, on=["district_id", "year"], how="left")
+        assert len(df) == n0, f"row count changed joining {path.name}"
+    for path, cols in [(MARKET_ACCESS, MARKET_COLS), (RESOURCES, RESOURCE_COLS)]:
+        if not path.exists():
+            raise SystemExit(f"missing input {path} — run its cleaning lane first")
+        t = pd.read_parquet(path)[["district_id"] + cols]  # district-constant -> broadcast to all years
+        df = df.merge(t, on="district_id", how="left")
+        assert len(df) == n0, f"row count changed joining {path.name}"
 
     # Pest sources run to 2026 but the panel ends 2025. Drop out-of-window obs
     # EXPLICITLY (log any African-study losses) and recompute first-detection ONLY

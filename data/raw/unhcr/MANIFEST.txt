@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+unhcr_population.json	https://api.unhcr.org/population/v1/population/?limit=100000&yearFrom=1989&yearTo=2025&coo_all=true&columns=refugees,asylum_seekers,idps,returned_refugees,returned_idps,stateless	2026-07-13T22:52:40Z	1772155	552e375eece01c176a78e437d47065e6004a75a28875cae23323a3ada63e7d56

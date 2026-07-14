@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+diadata.zip	https://cdn.cloud.prio.org/files/d042fc6a-ce8a-4c74-b555-e84d68365b99/DIADATA%20Data.zip	2026-07-14T00:34:41Z	338124	c81b48dc5e68e67a0a286332c6720727eb27a8ab45feaf686e01645ecd3d07d3

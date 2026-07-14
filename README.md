@@ -55,6 +55,14 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
    .venv/bin/python src/acquisition/12_download_colonial.py      # COLDAT + QoG jan22 + COW states (study colonial layer)
    .venv/bin/python src/acquisition/13_download_faw.py           # FAO FAMEWS fall-armyworm traps (study pest layer, Africa)
    .venv/bin/python src/acquisition/14_download_locust.py        # FAO Locust Hub swarms + bands (study pest layer, Africa)
+   .venv/bin/python src/acquisition/15_download_state_capacity.py    # ICTD/UNU-WIDER GRD (fiscal state capacity)
+   .venv/bin/python src/acquisition/16_download_regime_repression.py # V-Dem + Polity5 + Political Terror Scale
+   .venv/bin/python src/acquisition/17_download_displacement.py      # UNHCR + IDMC displacement
+   .venv/bin/python src/acquisition/18_download_cru_temp.py          # CRU TS temperature
+   .venv/bin/python src/acquisition/19_download_travel_time.py       # MAP travel-time-to-cities raster
+   .venv/bin/python src/acquisition/20_download_resources.py         # PRIO PETRODATA/DIADATA + USGS MRDS
+   .venv/bin/python src/acquisition/21_download_epr.py               # EPR-Core + GeoEPR (ethnic exclusion)
+   .venv/bin/python src/acquisition/22_download_fews.py              # FEWS NET IPC food-insecurity polygons
    ```
 
    **Cleaning** (`src/cleaning/`, one tidy table per source in `data/interim/`):
@@ -73,6 +81,15 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
    .venv/bin/python src/cleaning/12_colonial.py         # -> colonial.parquet (study colonial layer)
    .venv/bin/python src/cleaning/13_faw.py              # -> faw_district_year.parquet (study pest, Africa)
    .venv/bin/python src/cleaning/14_locust.py           # -> locust_district_year.parquet (study pest, Africa)
+   .venv/bin/python src/cleaning/15_state_capacity.py   # -> state_capacity.parquet (fiscal)
+   .venv/bin/python src/cleaning/16_regime.py           # -> regime.parquet (V-Dem + Polity5)
+   .venv/bin/python src/cleaning/17_repression.py       # -> repression.parquet (PTS)
+   .venv/bin/python src/cleaning/18_displacement.py     # -> displacement.parquet (UNHCR + IDMC)
+   .venv/bin/python src/cleaning/19_temperature_cru.py  # -> temperature_cru.parquet
+   .venv/bin/python src/cleaning/20_market_access.py    # -> market_access.parquet
+   .venv/bin/python src/cleaning/21_resources.py        # -> resources.parquet (oil/gas + diamonds/minerals)
+   .venv/bin/python src/cleaning/22_ethnic_epr.py       # -> ethnic_epr.parquet (ethnic exclusion)
+   .venv/bin/python src/cleaning/23_food_insecurity.py  # -> food_insecurity.parquet (FEWS IPC)
    ```
 
    **Merge** (`src/merge/`, joins the interim tables onto the spine × year frame):
@@ -83,17 +100,25 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
    The merge step also reads the committed crosswalk `reference/spam_pinksheet_crosswalk.csv` (SPAM crop → Pink Sheet commodity).
 
    **Study subset / enrich** (`src/subset/`, the Africa + South America + Caribbean
-   conflict×agriculture study — filter the global panel, add the colonial moderator
-   layer and the Africa-only pest shocks):
+   conflict×agriculture study — filter the global panel, then add the colonial,
+   country-year mediator, pest, and spatial enrichment layers):
    ```
    .venv/bin/python src/subset/01_region_filter.py      # -> panel_africa_samerica_caribbean.parquet (+ reference/iso3_region_crosswalk.csv)
-   .venv/bin/python src/subset/02_enrich_study.py       # -> panel_africa_samerica_caribbean_enriched.parquet (93 cols)
-   .venv/bin/python src/subset/03_validate_enriched.py  # 34 automated checks; exits nonzero on any failure
+   .venv/bin/python src/subset/02_enrich_study.py       # -> panel_africa_samerica_caribbean_enriched.parquet (148 cols)
+   .venv/bin/python src/subset/03_validate_enriched.py  # 67 automated checks; exits nonzero on any failure
    ```
    Study panel: **79 countries (Africa + South America + Caribbean), 583,490 rows,
-   93 columns** — the global panel plus the colonial legacy layer (all 79) and the
-   Africa-only fall-armyworm + desert-locust shocks. See `docs/CODEBOOK.md`
-   ("Study subset", "Colonial legacy layer", "Pest layer — Africa").
+   148 columns** — the global panel plus nine enrichment layers:
+   - **Colonial legacy** (all 79): colonizer, colonial dates, independence, legal origin.
+   - **Country-year mediators** (all 79): fiscal state capacity (GRD), regime & democracy
+     (V-Dem + Polity5), repression (PTS), displacement (UNHCR + IDMC).
+   - **Pest shocks** (Africa): fall armyworm + desert locust.
+   - **Spatial**: temperature (CRU), market access (travel-time), natural resources
+     (oil/gas + diamonds/minerals), ethnic exclusion (EPR), food insecurity (FEWS/IPC).
+
+   Colonial + country-year layers are moderators/controls to INTERACT with the
+   time-varying shocks (weather/temperature/pest/price), never standalone within-
+   country regressors. See `docs/CODEBOOK.md` and `docs/DATA_SOURCES.md`.
 
 The final panel is one row per admin-2 district × year: **49,329 districts × 37 years (1989–2025) = 1,825,173 rows, 61 columns** (35 core + 26 v0.2 enrichment: coups, ACLED political violence/unrest, and World Bank socioeconomic & agricultural covariates). Variable definitions are in `docs/CODEBOOK.md`.
 

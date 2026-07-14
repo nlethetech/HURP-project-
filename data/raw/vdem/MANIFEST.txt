@@ -1,0 +1,2 @@
+filename	url	retrieved_utc	bytes	sha256
+vdem.RData	https://raw.githubusercontent.com/vdeminstitute/vdemdata/master/data/vdem.RData	2026-07-09T18:11:43Z	33878255	39b412d39a061c18f20c98e4ad4d6355b05a0441df31be4ee9aec420dc3d95ea

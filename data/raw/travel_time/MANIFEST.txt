@@ -1,0 +1,3 @@
+filename	url	retrieved_utc	bytes	sha256
+travel_time_africa.tif	https://data.malariaatlas.org/geoserver/ows?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Accessibility__201501_Global_Travel_Time_to_Cities&format=image/geotiff&subset=Lat(-36,38)&subset=Long(-26,64)	2026-07-14T00:34:40Z	415239668	8d984ea8486aa4447a51ba895722721610aa6729046637066f788c67809eb758
+travel_time_americas.tif	https://data.malariaatlas.org/geoserver/ows?service=WCS&version=2.0.1&request=GetCoverage&coverageId=Accessibility__201501_Global_Travel_Time_to_Cities&format=image/geotiff&subset=Lat(-56,28)&subset=Long(-92,-33)	2026-07-14T00:34:40Z	293603924	74894d4e845ba6694de749a9a338afe0006903f1435f4b805cfc3442585a0a41

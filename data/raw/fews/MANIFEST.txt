@@ -1,0 +1,35 @@
+# FEWS NET IPC phase polygons; retrieved 2026-07-14T00:22:22Z
+# source: https://fdw.fews.net/api/ipcphasemap/ (scenario=CS)
+# files: 875; covered study countries: 32
+AGO(AO):1
+BDI(BI):18
+BFA(BF):40
+CAF(CF):2
+CIV(CI):1
+CMR(CM):18
+COD(CD):22
+COL(CO):1
+DJI(DJ):18
+ETH(ET):49
+HTI(HT):40
+KEN(KE):50
+LBR(LR):5
+LSO(LS):1
+MDG(MG):30
+MLI(ML):45
+MOZ(MZ):48
+MRT(MR):28
+MWI(MW):50
+NER(NE):50
+NGA(NG):46
+RWA(RW):14
+SDN(SD):21
+SLE(SL):4
+SOM(SO):45
+SSD(SS):50
+TCD(TD):50
+TGO(TG):1
+UGA(UG):48
+VEN(VE):2
+ZMB(ZM):27
+ZWE(ZW):50
