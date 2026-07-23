@@ -99,8 +99,8 @@ def main() -> None:
     cw = pd.read_csv(ROOT / "reference" / "iso3_region_crosswalk.csv")
     ours = set(cw[cw["kept"]]["iso3"])
     log.info("wrote %s: %d country-years, %d countries", OUT.name, len(df), df["iso3"].nunique())
-    log.info("V-Dem covers %d/79 study countries; Polity covers %d/79",
-             len(ours & set(v["iso3"])), len(ours & set(p["iso3"])))
+    log.info("V-Dem covers %d/%d study countries; Polity covers %d/%d",
+             len(ours & set(v["iso3"])), len(ours), len(ours & set(p["iso3"])), len(ours))
     log.info("V-Dem year range %d-%d | Polity year range %d-%d",
              int(v["year"].min()), int(v["year"].max()), int(p["year"].min()), int(p["year"].max()))
     log.info("study countries missing V-Dem: %s", sorted(ours - set(v["iso3"])))

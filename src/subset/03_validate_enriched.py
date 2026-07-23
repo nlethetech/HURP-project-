@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent validator for the enriched study panel (colonial + pest layers).
+"""Independent validator for the enriched Africa study panel.
 
 Re-checks the enrichment against source facts, known history, and the design
 rules (Africa-only pest, no zero-fill, complete colonial). Mirrors
@@ -17,7 +17,7 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
-PANEL = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean_enriched.parquet"
+PANEL = ROOT / "data" / "processed" / "panel_africa_enriched.parquet"
 
 CHECKS: list[tuple[str, bool]] = []
 
@@ -30,41 +30,39 @@ def chk(name: str, cond: bool, detail: str = "") -> None:
 
 def main() -> int:
     df = pd.read_parquet(PANEL)
-    amer = df["region"].isin(["South America", "Caribbean"])
     afr = df["region"] == "Africa"
     one = df.drop_duplicates("iso3").set_index("iso3")
 
     # --- structure ---
-    chk("row count 583,490", len(df) == 583_490, str(len(df)))
+    chk("row count 197,469", len(df) == 197_469, str(len(df)))
     chk("unique (district_id, year)", df.duplicated(["district_id", "year"]).sum() == 0)
-    chk("79 study countries", df["iso3"].nunique() == 79)
-    chk("regions == {Africa, South America, Caribbean}",
-        set(df["region"].unique()) == {"Africa", "South America", "Caribbean"})
+    chk("54 study countries", df["iso3"].nunique() == 54)
+    chk("regions == {Africa} (study is Africa-only)",
+        set(df["region"].unique()) == {"Africa"})
 
     # --- colonial completeness + correctness ---
-    chk("colonizer complete (79/79)", df[df["colonizer"].isna()]["iso3"].nunique() == 0)
+    chk("colonizer complete (54/54)", df[df["colonizer"].isna()]["iso3"].nunique() == 0)
     chk("legal tradition complete", df["civil_vs_common"].notna().all())
     chk("independence_year complete", df["independence_year"].notna().all())
-    chk("independence range 1822–2011",
-        int(df["independence_year"].min()) == 1822 and int(df["independence_year"].max()) == 2011)
+    chk("independence range 1920–2011 (COW entry: ZAF/LBR 1920 … SSD 2011)",
+        int(df["independence_year"].min()) == 1920 and int(df["independence_year"].max()) == 2011)
     chk("years_since_independence identity",
         (df["years_since_independence"] == df["year"] - df["independence_year"]).all())
     # known-history spot checks
-    spot = {"BRA": ("Portuguese", "civil"), "CUB": ("Spanish", "civil"), "COD": ("Belgian", "civil"),
-            "NGA": ("British", "common"), "SUR": ("Dutch", "civil"), "ETH": ("None", "civil"),
-            "DZA": ("French", "civil"), "JAM": ("British", "common"), "GNQ": ("Spanish", "civil")}
+    spot = {"COD": ("Belgian", "civil"), "NGA": ("British", "common"), "ETH": ("None", "civil"),
+            "DZA": ("French", "civil"), "GNQ": ("Spanish", "civil"), "AGO": ("Portuguese", "civil"),
+            "KEN": ("British", "common"), "MOZ": ("Portuguese", "civil"), "ZWE": ("British", "common")}
     for iso, (colz, law) in spot.items():
         chk(f"{iso} = {colz}/{law}",
             one.loc[iso, "colonizer"] == colz and one.loc[iso, "civil_vs_common"] == law,
             f"{one.loc[iso,'colonizer']}/{one.loc[iso,'civil_vs_common']}")
-    chk("CUB legal_origin = Socialist (La Porta)", one.loc["CUB", "legal_origin"] == "Socialist")
-    chk("colonizer×region: South America Spanish==9",
-        (df[df.region == "South America"].drop_duplicates("iso3")["colonizer"] == "Spanish").sum() == 9)
+    chk("colonizer: Spanish Africa == 1 (Equatorial Guinea only)",
+        (df.drop_duplicates("iso3")["colonizer"] == "Spanish").sum() == 1)
+    chk("legal_origin: 6 imputed (COM/ERI/ETH/NAM/SDN/SSD), filled complete",
+        set(one[one["legal_origin_imputed"] == 1].index) == {"COM", "ERI", "ETH", "NAM", "SDN", "SSD"}
+        and df["legal_origin_filled"].notna().all())
 
-    # --- pest: Africa-only, no zero-fill ---
-    pest = ["faw_present", "dl_present_flag", "faw_confirmed_sum", "dl_swarm_obs",
-            "years_since_faw_arrival", "dl_first_gregarious_year", "faw_first_detection_year"]
-    chk("pest ALL NaN for South America + Caribbean", df.loc[amer, pest].isna().all().all())
+    # --- pest: monitoring data, no zero-fill ---
     chk("dl_present_flag ∈ {1, NaN} (presence-only, no spurious 0)",
         set(df["dl_present_flag"].dropna().unique()) == {1.0})
     chk("Africa pest is sparse NaN (monitoring, not zero-filled)",
@@ -79,6 +77,12 @@ def main() -> int:
         f"{up['district_id'].nunique()} districts")
     chk("FAW invasion post-2015 only (first_detection_year >= 2018)",
         df["faw_first_detection_year"].dropna().min() >= 2018)
+    arrived = df["faw_first_detection_year"].notna()
+    chk("pest intensity columns present + coherent (obs-only; arrival-clock identity)",
+        df["faw_confirmed_sum"].notna().any() and df["dl_swarm_obs"].notna().any()
+        and (df["faw_confirmed_sum"].dropna() >= 0).all()
+        and (df.loc[arrived, "years_since_faw_arrival"]
+             == df.loc[arrived, "year"] - df.loc[arrived, "faw_first_detection_year"]).all())
 
     # --- colonial correctness regressions (adversarial-review fixes) ---
     chk("ZWE independence_year == 1980 (not UDI 1965)", int(one.loc["ZWE", "independence_year"]) == 1980)
@@ -102,9 +106,10 @@ def main() -> int:
     chk("every in-window African FAW obs lands in panel", lands(interim / "faw_district_year.parquet", "faw_present"))
 
     # --- country-year mediators (state capacity / regime / repression) ---
-    chk("PTS repression covers all 79 (ZAR->COD fix)", df[df["pts_score"].notna()]["iso3"].nunique() == 79)
-    chk("V-Dem covers 72/79 (7 Caribbean microstates absent)", df[df["vdem_polyarchy"].notna()]["iso3"].nunique() == 72)
-    chk("GRD tax covers 76/79", df[df["grd_tax_pct_gdp"].notna()]["iso3"].nunique() == 76)
+    chk("PTS repression covers all 54 (ZAR->COD fix)", df[df["pts_score"].notna()]["iso3"].nunique() == 54)
+    chk("V-Dem covers all 54", df[df["vdem_polyarchy"].notna()]["iso3"].nunique() == 54)
+    chk("GRD tax covers 51/54 (DZA/EGY/SSD lack the tax series)",
+        df[df["grd_tax_pct_gdp"].notna()]["iso3"].nunique() == 51)
     chk("no zero-fill leak: tax/regime/pts NaN not 0 where missing",
         df["grd_tax_pct_gdp"].min() > 0 and df["vdem_polyarchy"].min() > 0 and df["pts_score"].min() >= 1)
     chk("mediators time-varying (not absorbed by country FE)",
@@ -122,44 +127,41 @@ def main() -> int:
     chk("Sudan polity2 spans to >=2018 (ccode 626 fix)", pol_span("SDN")[1] >= 2018)
     ssd15 = df[(df["iso3"] == "SSD") & (df["year"] == 2015)]["polity2"]
     chk("South Sudan 2015 polity2 == 0 (own value, not Sudan's -4)", (ssd15 == 0).all() and len(ssd15) > 0)
-    chk("polity2 covers >=69/79 study countries", df[df["polity2"].notna()]["iso3"].nunique() >= 69)
+    chk("polity2 covers 52/54 (STP/SYC microstates absent)", df[df["polity2"].notna()]["iso3"].nunique() == 52)
 
     # --- displacement (UNHCR origins + IDMC) ---
-    chk("UNHCR refugees_origin covers all 79", df[df["refugees_origin"].notna()]["iso3"].nunique() == 79)
+    chk("UNHCR refugees_origin covers all 54", df[df["refugees_origin"].notna()]["iso3"].nunique() == 54)
     chk("IDMC conflict-stock covers the conflict-affected subset (>=35)",
         df[df["idp_stock_conflict"].notna()]["iso3"].nunique() >= 35)
     chk("displacement not zero-filled (NaN where unobserved)",
         df["idp_stock_conflict"].isna().any() and df["new_disp_disaster"].isna().any())
-    col15 = df[(df["iso3"] == "COL") & (df["year"] == 2015)]["idp_stock_conflict"]
-    chk("Colombia 2015 conflict IDP stock > 5M (real crisis)", (col15 > 5_000_000).all() and len(col15) > 0)
+    sdn15 = df[(df["iso3"] == "SDN") & (df["year"] == 2015)]["idp_stock_conflict"]
+    chk("Sudan 2015 conflict IDP stock > 3M (Darfur legacy)", (sdn15 > 3_000_000).all() and len(sdn15) > 0)
     rw94 = df[(df["iso3"] == "RWA") & (df["year"] == 1994)]["refugees_origin"]
     chk("Rwanda 1994 refugees > 2M (genocide exodus)", (rw94 > 2_000_000).all() and len(rw94) > 0)
 
     # --- spatial layers: temperature / market access / resources / ethnic exclusion ---
-    chk("temperature covers all 79", df[df["temp_mean"].notna()]["iso3"].nunique() == 79)
+    chk("temperature covers all 54", df[df["temp_mean"].notna()]["iso3"].nunique() == 54)
     chk("temp_mean physically plausible (-30..45 C)", df["temp_mean"].min() > -30 and df["temp_mean"].max() < 45)
     chk("temperature 2025 is NaN (CRU ends 2024, no zero-fill)", df[df["year"] == 2025]["temp_mean"].isna().all())
     tmean = df.groupby("iso3")["temp_mean"].mean()
-    chk("Niger hotter than Chile (sanity)", tmean.get("NER", 0) > tmean.get("CHL", 99))
+    chk("Niger hotter than Lesotho (sanity)", tmean.get("NER", 0) > tmean.get("LSO", 99))
     chk("temp_anomaly physically bounded (|z| < 8, no degenerate-baseline blowup)",
         df["temp_anomaly"].abs().max() < 8)
-    chk("market access covers all 79", df[df["travel_time_to_city_min_median"].notna()]["iso3"].nunique() == 79)
+    chk("market access covers all 54", df[df["travel_time_to_city_min_median"].notna()]["iso3"].nunique() == 54)
     chk("travel-time keeps in-city 0s (min == 0, not masked)", df["travel_time_to_city_min_median"].min() == 0)
-    chk("Fernando de Noronha covered (tile-seam gap closed)",
-        df[df["district_id"] == "56859067B68153873864864"]["travel_time_to_city_min_median"].notna().any())
     # resources: lootable-diamond distinction (Sierra Leone alluvial vs Botswana kimberlite)
     sle = df[df["iso3"] == "SLE"]["has_lootable_diamond"]
     bwa = df[df["iso3"] == "BWA"]
     chk("Sierra Leone has lootable diamonds", (sle == 1).any())
     chk("Botswana diamonds are NON-lootable (kimberlite)",
         (bwa["has_diamond"] == 1).any() and (bwa["has_lootable_diamond"] == 1).sum() == 0)
-    chk("resources zero-filled census (has_oil_gas all 79)", df[df["has_oil_gas"].notna()]["iso3"].nunique() == 79)
+    chk("resources zero-filled census (has_oil_gas all 54)", df[df["has_oil_gas"].notna()]["iso3"].nunique() == 54)
     # gold: African artisanal-gold gap filled via USGS (MRDS alone had Mali=4)
     chk("Mali has gold (USGS Africa fills the MRDS gap)", (df[df["iso3"] == "MLI"]["has_gold"] == 1).any())
     chk("Burkina/Ghana/DRC/Tanzania gold present",
         all((df[df["iso3"] == c]["has_gold"] == 1).any() for c in ["BFA", "GHA", "COD", "TZA"]))
-    chk("Americas gold present (MRDS): Peru & Colombia", (df[df["iso3"] == "PER"]["has_gold"] == 1).any() and (df[df["iso3"] == "COL"]["has_gold"] == 1).any())
-    chk("has_gold covers all 79 (census, 0/1)", df[df["has_gold"].notna()]["iso3"].nunique() == 79 and set(df["has_gold"].dropna().unique()) <= {0, 1})
+    chk("has_gold covers all 54 (census, 0/1)", df[df["has_gold"].notna()]["iso3"].nunique() == 54 and set(df["has_gold"].dropna().unique()) <= {0, 1})
     # ethnic exclusion: South Africa apartheid -> democracy
     za_ex = df[df["iso3"] == "ZAF"].groupby("year")["share_area_excluded"].mean()
     chk("South Africa excluded-share fell after apartheid (1990 >> 2000)", za_ex.get(1990, 0) > 0.5 and za_ex.get(2000, 1) < 0.2)
@@ -167,7 +169,6 @@ def main() -> int:
 
     # --- food insecurity (FEWS/IPC) ---
     chk("food insecurity covers >=20 study countries", df[df["ipc_phase_max"].notna()]["iso3"].nunique() >= 20)
-    chk("food insecurity reaches Haiti (Americas)", df[(df["iso3"] == "HTI") & (df["ipc_phase_max"].notna())].shape[0] > 0)
     chk("IPC phases in 1..5", df["ipc_phase_max"].dropna().between(1, 5).all())
     chk("South Sudan 2017 famine captured (phase 5)",
         (df[(df["iso3"] == "SSD") & (df["year"] == 2017)]["ipc_phase_max"] == 5).any())
@@ -178,14 +179,14 @@ def main() -> int:
          (df.loc[df["ipc_phase_max"].notna(), "ipc_phase_max"] >= 3).astype(int)).all())
 
     # --- FAOSTAT agricultural output ---
-    chk("FAOSTAT cereal covers 75/79 (4 non-cereal island states NaN)",
-        df[df["fao_cereal_prod_t"].notna()]["iso3"].nunique() == 75)
+    chk("FAOSTAT cereal covers 52/54 (GNQ/SYC non-cereal producers NaN)",
+        df[df["fao_cereal_prod_t"].notna()]["iso3"].nunique() == 52)
     chk("FAOSTAT 2025 NaN (bulk ends 2024, not carried)", df[df["year"] == 2025]["fao_cereal_prod_t"].isna().all())
     chk("FAOSTAT not blanket zero-filled (mostly NaN or real values)", df["fao_maize_prod_t"].isna().any())
     ng = df[(df["iso3"] == "NGA") & (df["year"] == 2020)]["fao_cassava_prod_t"]
     chk("Nigeria 2020 cassava > 40M t (world's #1 producer)", (ng > 40_000_000).all() and len(ng) > 0)
-    br = df[(df["iso3"] == "BRA") & (df["year"] == 2020)]["fao_maize_prod_t"]
-    chk("Brazil 2020 maize > 50M t", (br > 50_000_000).all() and len(br) > 0)
+    za_mz = df[(df["iso3"] == "ZAF") & (df["year"] == 2020)]["fao_maize_prod_t"]
+    chk("South Africa 2020 maize > 10M t", (za_mz > 10_000_000).all() and len(za_mz) > 0)
     chk("FAOSTAT cereal yield plausible (200-15000 kg/ha)",
         df["fao_cereal_yield_kgha"].dropna().between(200, 15000).mean() > 0.99)
     chk("Ethiopia FAOSTAT back-series recovered (1989 present via Ethiopia-PDR fix)",

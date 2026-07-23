@@ -4,10 +4,10 @@ AGO,Africa,Middle Africa,Africa,True
 ALB,Europe,Southern Europe,Europe,False
 AND,Europe,Southern Europe,Europe,False
 ARE,Asia,Western Asia,Asia,False
-ARG,America,South America,South America,True
+ARG,America,South America,South America,False
 ARM,Asia,Western Asia,Asia,False
 ATA,Antarctica,Antarctica,Antarctica,False
-ATG,America,Caribbean,Caribbean,True
+ATG,America,Caribbean,Caribbean,False
 AUS,Oceania,Australia and New Zealand,Oceania,False
 AUT,Europe,Western Europe,Europe,False
 AZE,Asia,Western Asia,Asia,False
@@ -18,39 +18,39 @@ BFA,Africa,Western Africa,Africa,True
 BGD,Asia,Southern Asia,Asia,False
 BGR,Europe,Eastern Europe,Europe,False
 BHR,Asia,Western Asia,Asia,False
-BHS,America,Caribbean,Caribbean,True
+BHS,America,Caribbean,Caribbean,False
 BIH,Europe,Southern Europe,Europe,False
 BLR,Europe,Eastern Europe,Europe,False
 BLZ,America,Central America,Central America,False
-BOL,America,South America,South America,True
-BRA,America,South America,South America,True
-BRB,America,Caribbean,Caribbean,True
+BOL,America,South America,South America,False
+BRA,America,South America,South America,False
+BRB,America,Caribbean,Caribbean,False
 BRN,Asia,South-eastern Asia,Asia,False
 BTN,Asia,Southern Asia,Asia,False
 BWA,Africa,Southern Africa,Africa,True
 CAF,Africa,Middle Africa,Africa,True
 CAN,America,Northern America,Northern America,False
 CHE,Europe,Western Europe,Europe,False
-CHL,America,South America,South America,True
+CHL,America,South America,South America,False
 CHN,Asia,Eastern Asia,Asia,False
 CIV,Africa,Western Africa,Africa,True
 CMR,Africa,Middle Africa,Africa,True
 COD,Africa,Middle Africa,Africa,True
 COG,Africa,Middle Africa,Africa,True
-COL,America,South America,South America,True
+COL,America,South America,South America,False
 COM,Africa,Eastern Africa,Africa,True
 CPV,Africa,Western Africa,Africa,True
 CRI,America,Central America,Central America,False
-CUB,America,Caribbean,Caribbean,True
+CUB,America,Caribbean,Caribbean,False
 CYP,Asia,Western Asia,Asia,False
 CZE,Europe,Eastern Europe,Europe,False
 DEU,Europe,Western Europe,Europe,False
 DJI,Africa,Eastern Africa,Africa,True
-DMA,America,Caribbean,Caribbean,True
+DMA,America,Caribbean,Caribbean,False
 DNK,Europe,Northern Europe,Europe,False
-DOM,America,Caribbean,Caribbean,True
+DOM,America,Caribbean,Caribbean,False
 DZA,Africa,Northern Africa,Africa,True
-ECU,America,South America,South America,True
+ECU,America,South America,South America,False
 EGY,Africa,Northern Africa,Africa,True
 ERI,Africa,Eastern Africa,Africa,True
 ESP,Europe,Southern Europe,Europe,False
@@ -69,13 +69,13 @@ GMB,Africa,Western Africa,Africa,True
 GNB,Africa,Western Africa,Africa,True
 GNQ,Africa,Middle Africa,Africa,True
 GRC,Europe,Southern Europe,Europe,False
-GRD,America,Caribbean,Caribbean,True
+GRD,America,Caribbean,Caribbean,False
 GRL,America,Northern America,Northern America,False
 GTM,America,Central America,Central America,False
-GUY,America,South America,South America,True
+GUY,America,South America,South America,False
 HND,America,Central America,Central America,False
 HRV,Europe,Southern Europe,Europe,False
-HTI,America,Caribbean,Caribbean,True
+HTI,America,Caribbean,Caribbean,False
 HUN,Europe,Eastern Europe,Europe,False
 IDN,Asia,South-eastern Asia,Asia,False
 IND,Asia,Southern Asia,Asia,False
@@ -85,7 +85,7 @@ IRQ,Asia,Western Asia,Asia,False
 ISL,Europe,Northern Europe,Europe,False
 ISR,Asia,Western Asia,Asia,False
 ITA,Europe,Southern Europe,Europe,False
-JAM,America,Caribbean,Caribbean,True
+JAM,America,Caribbean,Caribbean,False
 JOR,Asia,Western Asia,Asia,False
 JPN,Asia,Eastern Asia,Asia,False
 KAZ,Asia,Central Asia,Asia,False
@@ -93,14 +93,14 @@ KEN,Africa,Eastern Africa,Africa,True
 KGZ,Asia,Central Asia,Asia,False
 KHM,Asia,South-eastern Asia,Asia,False
 KIR,Oceania,Micronesia,Oceania,False
-KNA,America,Caribbean,Caribbean,True
+KNA,America,Caribbean,Caribbean,False
 KOR,Asia,Eastern Asia,Asia,False
 KWT,Asia,Western Asia,Asia,False
 LAO,Asia,South-eastern Asia,Asia,False
 LBN,Asia,Western Asia,Asia,False
 LBR,Africa,Western Africa,Africa,True
 LBY,Africa,Northern Africa,Africa,True
-LCA,America,Caribbean,Caribbean,True
+LCA,America,Caribbean,Caribbean,False
 LIE,Europe,Western Europe,Europe,False
 LKA,Asia,Southern Asia,Asia,False
 LSO,Africa,Southern Africa,Africa,True
@@ -137,14 +137,14 @@ NZL,Oceania,Australia and New Zealand,Oceania,False
 OMN,Asia,Western Asia,Asia,False
 PAK,Asia,Southern Asia,Asia,False
 PAN,America,Central America,Central America,False
-PER,America,South America,South America,True
+PER,America,South America,South America,False
 PHL,Asia,South-eastern Asia,Asia,False
 PLW,Oceania,Micronesia,Oceania,False
 PNG,Oceania,Melanesia,Oceania,False
 POL,Europe,Eastern Europe,Europe,False
 PRK,Asia,Eastern Asia,Asia,False
 PRT,Europe,Southern Europe,Europe,False
-PRY,America,South America,South America,True
+PRY,America,South America,South America,False
 QAT,Asia,Western Asia,Asia,False
 ROU,Europe,Eastern Europe,Europe,False
 RUS,Europe,Eastern Europe,Europe,False
@@ -161,7 +161,7 @@ SOM,Africa,Eastern Africa,Africa,True
 SRB,Europe,Southern Europe,Europe,False
 SSD,Africa,Eastern Africa,Africa,True
 STP,Africa,Middle Africa,Africa,True
-SUR,America,South America,South America,True
+SUR,America,South America,South America,False
 SVK,Europe,Eastern Europe,Europe,False
 SVN,Europe,Southern Europe,Europe,False
 SWE,Europe,Northern Europe,Europe,False
@@ -175,7 +175,7 @@ TJK,Asia,Central Asia,Asia,False
 TKM,Asia,Central Asia,Asia,False
 TLS,Asia,South-eastern Asia,Asia,False
 TON,Oceania,Polynesia,Oceania,False
-TTO,America,Caribbean,Caribbean,True
+TTO,America,Caribbean,Caribbean,False
 TUN,Africa,Northern Africa,Africa,True
 TUR,Asia,Western Asia,Asia,False
 TUV,Oceania,Polynesia,Oceania,False
@@ -183,12 +183,12 @@ TWN,Asia,Eastern Asia,Asia,False
 TZA,Africa,Eastern Africa,Africa,True
 UGA,Africa,Eastern Africa,Africa,True
 UKR,Europe,Eastern Europe,Europe,False
-URY,America,South America,South America,True
+URY,America,South America,South America,False
 USA,America,Northern America,Northern America,False
 UZB,Asia,Central Asia,Asia,False
 VAT,Europe,Southern Europe,Europe,False
-VCT,America,Caribbean,Caribbean,True
-VEN,America,South America,South America,True
+VCT,America,Caribbean,Caribbean,False
+VEN,America,South America,South America,False
 VNM,Asia,South-eastern Asia,Asia,False
 VUT,Oceania,Melanesia,Oceania,False
 WSM,Oceania,Polynesia,Oceania,False

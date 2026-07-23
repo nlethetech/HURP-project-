@@ -85,8 +85,8 @@ def main() -> None:
     ours = set(cw[cw["kept"]]["iso3"])
     log.info("wrote %s: %d country-years, %d countries, %d-%d",
              OUT.name, len(out), out["iso3"].nunique(), int(out["year"].min()), int(out["year"].max()))
-    log.info("study coverage: %d/79 | pts_score non-null: %.0f%%",
-             len(ours & set(out["iso3"])), 100 * out["pts_score"].notna().mean())
+    log.info("study coverage: %d/%d | pts_score non-null: %.0f%%",
+             len(ours & set(out["iso3"])), len(ours), 100 * out["pts_score"].notna().mean())
     log.info("pts_source mix: %s", pd.Series(out["pts_source"]).value_counts(dropna=False).to_dict())
     log.info("study countries missing PTS: %s", sorted(ours - set(out["iso3"])))
 

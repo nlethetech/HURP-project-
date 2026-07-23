@@ -4,7 +4,8 @@
 Purpose
 -------
 Turn the FAOSTAT "Production: Crops and livestock products" (QCL) bulk download
-into (a) a COMPLETE tidy country-year long table for the 79 study countries
+into (a) a COMPLETE tidy country-year long table for the study countries
+(the `kept` set of reference/iso3_region_crosswalk.csv)
 (every crop/livestock item x {Production, Area harvested, Yield}) and (b) a
 panel-ready WIDE country-year table of headline agricultural-output measures
 that merges onto the study panel by iso3 (see docs/CODEBOOK.md, "Agriculture —
@@ -136,8 +137,8 @@ def main() -> None:
     log.info("wrote %s: %d rows (complete long), %d items, %d countries, %d-%d",
              OUT_LONG.name, len(study), study["item_code"].nunique(), study["iso3"].nunique(),
              int(study["year"].min()), int(study["year"].max()))
-    log.info("wrote %s: %d country-years x %d cols; study countries %d/79",
-             OUT_WIDE.name, len(w), w.shape[1] - 2, len(ours & set(w["iso3"])))
+    log.info("wrote %s: %d country-years x %d cols; study countries %d/%d",
+             OUT_WIDE.name, len(w), w.shape[1] - 2, len(ours & set(w["iso3"])), len(ours))
     log.info("wide columns: %s", [c for c in w.columns if c not in ("iso3", "year")])
 
 

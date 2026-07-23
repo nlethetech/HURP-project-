@@ -7,7 +7,7 @@ Overlay the FEWS NET IPC-phase polygons (one geojson per country-date) with the
 admin-2 spine and aggregate to district-year (see docs/CODEBOOK.md, "Food
 insecurity"). The literal bridge between agricultural output and conflict:
 subnational acute food stress. Coverage-masked (NaN where not monitored — never
-zero-filled); Africa-heavy with Haiti the only strong Americas reach; ~2011+.
+zero-filled); FEWS monitors the food-crisis belt, not every country; ~2011+.
 
 Method
 ------

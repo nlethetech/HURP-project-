@@ -2,7 +2,7 @@
 """Interactive data explorer for the enriched HURP study panel.
 
 A local Streamlit app to BROWSE full rows and run data analytics on the
-583,490 x 173 conflict x agriculture study panel: a filterable data table,
+Africa-only conflict x agriculture study panel: a filterable data table,
 country profiles, time series, distributions, the conflict<->agriculture
 scatter, correlations, and group-by aggregates.
 
@@ -23,7 +23,7 @@ import plotly.express as px
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[2]
-PANEL = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean_enriched.parquet"
+PANEL = ROOT / "data" / "processed" / "panel_africa_enriched.parquet"
 CODEBOOK = ROOT / "docs" / "CODEBOOK.md"
 
 st.set_page_config(page_title="HURP Data Explorer", layout="wide", page_icon="🌍")
@@ -58,7 +58,7 @@ def layer_of(col: str) -> str:
     return "Other"
 
 
-@st.cache_data(show_spinner="Loading the 583k-row panel…")
+@st.cache_data(show_spinner="Loading the 197k-row panel…")
 def load() -> pd.DataFrame:
     return pd.read_parquet(PANEL)
 
@@ -180,7 +180,7 @@ with tabs[0]:
     show = list(dict.fromkeys(["iso3", "year", "district_name"] + cols + extra))
     view = f[show]
     max_rows = st.slider("Rows to preview", 100, 20000, 1000, step=100,
-                         help="A capped preview — no browser can render all 583k rows. Filter (sidebar) to narrow, or download for the full filtered slice.")
+                         help="A capped preview — no browser can render all 197k rows. Filter (sidebar) to narrow, or download for the full filtered slice.")
     st.caption(f"Showing **{min(len(view), max_rows):,}** of **{len(view):,}** filtered rows · {len(show)} columns.")
     st.dataframe(view.head(max_rows), use_container_width=True, height=560, hide_index=True)
     if len(view) <= 200_000:

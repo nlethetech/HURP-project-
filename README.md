@@ -99,26 +99,29 @@ Pipeline convention: `data/raw` → (`src/cleaning`) → `data/interim` → (`sr
 
    The merge step also reads the committed crosswalk `reference/spam_pinksheet_crosswalk.csv` (SPAM crop → Pink Sheet commodity).
 
-   **Study subset / enrich** (`src/subset/`, the Africa + South America + Caribbean
-   conflict×agriculture study — filter the global panel, then add the colonial,
-   country-year mediator, pest, and spatial enrichment layers):
+   **Study subset / enrich** (`src/subset/`, the Africa conflict×agriculture
+   study — filter the global panel, then add the colonial, country-year
+   mediator, pest, spatial, and agricultural-output enrichment layers):
    ```
-   .venv/bin/python src/subset/01_region_filter.py      # -> panel_africa_samerica_caribbean.parquet (+ reference/iso3_region_crosswalk.csv)
-   .venv/bin/python src/subset/02_enrich_study.py       # -> panel_africa_samerica_caribbean_enriched.parquet (148 cols)
-   .venv/bin/python src/subset/03_validate_enriched.py  # 67 automated checks; exits nonzero on any failure
+   .venv/bin/python src/subset/01_region_filter.py      # -> panel_africa.parquet (+ reference/iso3_region_crosswalk.csv)
+   .venv/bin/python src/subset/02_enrich_study.py       # -> panel_africa_enriched.parquet (175 cols)
+   .venv/bin/python src/subset/03_validate_enriched.py  # 78 automated checks; exits nonzero on any failure
    ```
-   Study panel: **79 countries (Africa + South America + Caribbean), 583,490 rows,
-   148 columns** — the global panel plus nine enrichment layers:
-   - **Colonial legacy** (all 79): colonizer, colonial dates, independence, legal origin.
-   - **Country-year mediators** (all 79): fiscal state capacity (GRD), regime & democracy
+   Study panel: **54 countries (Africa), 197,469 rows, 175 columns** — the
+   global panel plus ten enrichment layers:
+   - **Colonial legacy** (all 54): colonizer, colonial dates, independence, legal origin.
+   - **Country-year mediators** (all 54): fiscal state capacity (GRD), regime & democracy
      (V-Dem + Polity5), repression (PTS), displacement (UNHCR + IDMC).
-   - **Pest shocks** (Africa): fall armyworm + desert locust.
+   - **Pest shocks**: fall armyworm + desert locust.
    - **Spatial**: temperature (CRU), market access (travel-time), natural resources
-     (oil/gas + diamonds/minerals), ethnic exclusion (EPR), food insecurity (FEWS/IPC).
+     (oil/gas + diamonds/minerals + gold), ethnic exclusion (EPR), food insecurity (FEWS/IPC).
+   - **Agricultural output** (FAOSTAT QCL): group totals + 8 staple crops, production/area/yield.
 
    Colonial + country-year layers are moderators/controls to INTERACT with the
    time-varying shocks (weather/temperature/pest/price), never standalone within-
    country regressors. See `docs/CODEBOOK.md` and `docs/DATA_SOURCES.md`.
+   (The study previously also covered South America + the Caribbean; it was
+   narrowed to Africa only — the global master panel is unchanged.)
 
 The final panel is one row per admin-2 district × year: **49,329 districts × 37 years (1989–2025) = 1,825,173 rows, 61 columns** (35 core + 26 v0.2 enrichment: coups, ACLED political violence/unrest, and World Bank socioeconomic & agricultural covariates). Variable definitions are in `docs/CODEBOOK.md`.
 

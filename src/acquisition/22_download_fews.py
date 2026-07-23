@@ -6,8 +6,8 @@ Purpose
 Acquire subnational IPC-compatible acute food-insecurity classifications from the
 FEWS NET Data Warehouse (see docs/DATA_SOURCES.md, "Food insecurity"). For each
 covered study country, discover its Current-Status (CS) reporting dates, then
-download the phase polygons for each date. Africa-heavy; the only Americas reach
-is Haiti (+ recent Colombia/Venezuela). ~2011 onward.
+download the phase polygons for each date. FEWS monitors the food-crisis belt,
+not every country. ~2011 onward.
 
 Source / registry
 -----------------

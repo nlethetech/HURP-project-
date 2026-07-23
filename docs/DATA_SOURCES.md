@@ -464,7 +464,7 @@ Template for new entries:
 ## Colonial legacy (study-subset moderator layer)
 
 Three small, static, country-level sources added 2026-07-09 for the
-Africa + South America + Caribbean study subset (see docs/CODEBOOK.md,
+Africa study subset (see docs/CODEBOOK.md,
 "Colonial legacy layer"). All are TIME-INVARIANT country attributes broadcast
 onto every district-year by `iso3` — moderators to interact with the
 time-varying conflict/output shocks, never standalone within-country regressors.
@@ -479,7 +479,7 @@ Acquisition: `src/acquisition/12_download_colonial.py`; cleaning:
 - **Homepage / DOI**: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/T9SDEW
 - **Download / API**: direct, no auth. `COLDAT_colonies.tab` (wide, one row per
   country) = Dataverse datafile id 7416946 (`/api/access/datafile/7416946?format=original`).
-- **Coverage**: contemporary nation-states; 79/79 of our study countries match
+- **Coverage**: contemporary nation-states; 54/54 of our study countries match
   by name (regex). Ethiopia & Liberia coded not-colonized (all-zero dummies).
 - **Unit**: country (time-invariant). Uses the `_mean` aggregation of dates
   (author-preferred for statistics).
@@ -498,12 +498,12 @@ Acquisition: `src/acquisition/12_download_colonial.py`; cleaning:
 ### QoG Standard Cross-Section, version jan22 (ht_colonial + lp_legor)
 - **Provider**: Quality of Government Institute, Univ. of Gothenburg.
 - **Role in panel**: `ht_colonial` (Hadenius–Teorell colonizer identity, complete
-  for our 79) → `colonizer`; `lp_legor` (La Porta legal origin) → `legal_origin`,
+  for our 54) → `colonizer`; `lp_legor` (La Porta legal origin) → `legal_origin`,
   `legal_origin_filled`, `civil_vs_common`. Also supplies the `ccodecow`↔`ccodealp`
   (COW code ↔ ISO3) bridge used to key the COW file.
 - **Homepage**: https://www.qog.pol.gu.se/data/datadownloads/qogstandarddata
 - **Download / API**: direct CSV https://www.qogdata.pol.gu.se/data/qog_std_cs_jan22.csv
-- **Coverage**: `ht_colonial` 79/79; `lp_legor` 70/79 (9 blanks imputed from
+- **Coverage**: `ht_colonial` 54/54; `lp_legor` 48/54 (6 blanks imputed from
   colonizer identity and flagged `legal_origin_imputed`).
 - **Unit**: country cross-section (one row per country; time-invariant here).
 - **License**: free academic/research use with citation (QoG terms). Ship derived
@@ -515,7 +515,7 @@ Acquisition: `src/acquisition/12_download_colonial.py`; cleaning:
   `ht_colonial` codes: 0 None,1 Dutch,2 Spanish,3 Italian,4 US,5 British,6 French,
   7 Portuguese,8 Belgian,9 British-French,10 Australian. `lp_legor`: 1 English,
   2 French,3 Socialist,4 German,5 Scandinavian.
-- **Facts verified**: 2026-07-09 (live download; coverage checked vs the 79).
+- **Facts verified**: 2026-07-09 (live download; coverage checked vs the study countries).
 
 ### Correlates of War — State System Membership (states2016, v2016)
 - **Provider**: Correlates of War Project (correlatesofwar.org).
@@ -524,7 +524,7 @@ Acquisition: `src/acquisition/12_download_colonial.py`; cleaning:
   `years_since_independence = year − independence_year`.
 - **Homepage**: https://correlatesofwar.org/data-sets/state-system-membership/
 - **Download / API**: direct CSV https://correlatesofwar.org/wp-content/uploads/states2016.csv
-- **Coverage**: 79/79 via the QoG `ccodecow`→`iso3` bridge; current spell
+- **Coverage**: 54/54 via the QoG `ccodecow`→`iso3` bridge; current spell
   (`endyear==2016`), max `styear` for multi-spell states.
 - **License**: free use, citation required, no paywalling of access.
 - **Citation**: Correlates of War Project (2017). "State System Membership List,
@@ -534,15 +534,14 @@ Acquisition: `src/acquisition/12_download_colonial.py`; cleaning:
   vs COLDAT decolonization 1804; Ethiopia 1941. Use `col_end_year` (COLDAT) for
   "freed from colonial rule"; `independence_year` for "years in the state system."
   coco has no COW code class → bridged via QoG.
-- **Facts verified**: 2026-07-09 (live download; bridge checked vs the 79).
+- **Facts verified**: 2026-07-09 (live download; bridge checked vs the study countries).
 
 ## Pest / crop disease (Africa-only shock layer)
 
 Two georeferenced, dated, plausibly-EXOGENOUS crop-pest sources added 2026-07-09
 for the study subset (see docs/CODEBOOK.md, "Pest layer — Africa"). **By design
 these cover Africa only** — no georeferenced desert-locust or fall-armyworm data
-exists for South America or the Caribbean (species-range fact, not a data gap),
-so the pest columns are NaN for all Americas rows. Both are MONITORING/SURVEY
+exists outside the species' African/Afro-Asian range. Both are MONITORING/SURVEY
 feeds: a missing district-year is *not observed*, never *pest-free*, so they are
 never zero-filled. Acquisition: `src/acquisition/13_download_faw.py`,
 `14_download_locust.py`; cleaning: `src/cleaning/13_faw.py`, `14_locust.py`
@@ -560,8 +559,7 @@ never zero-filled. Acquisition: `src/acquisition/13_download_faw.py`,
   (`.../api/v2/bigquery?sql_url=...famews-...&dim_country=All%20Countries&period=all`).
 - **Coverage**: 15,220 dated georeferenced trap checks, 2018-2025 (usable
   2018-2023; collapses after). **42 of our African countries monitored** (35 with
-  a confirmed detection); **0 South America / Caribbean** (bar 2 zero-FAW Peru
-  points, masked out).
+  a confirmed detection).
 - **Unit**: trap check (lat/lon + date) → district-year via point-in-polygon.
 - **License**: stated CC-BY-3.0-IGO, but this is the same FAO Open Data /
   Hand-in-Hand platform whose desert-locust dataset carries a conflicting
@@ -589,7 +587,7 @@ never zero-filled. Acquisition: `src/acquisition/13_download_faw.py`,
   7 out-of-window 2026 observations are dropped at merge (logged); **panel locust
   values are 2004-2025**. 20 of our African countries — the desert-locust belt
   (Sahel, Horn, N. Africa): DZA EGY LBY MAR TUN, MRT MLI NER TCD SEN, SDN SSD ERI
-  DJI ETH SOM KEN UGA TZA COD. **0 South America / Caribbean.**
+  DJI ETH SOM KEN UGA TZA COD.
 - **Unit**: field observation (lat/lon + date) → district-year via point-in-polygon.
 - **License**: FAO. The Observations page states CC-BY-3.0-IGO while a sibling
   "Hand-in-Hand" page states CC-BY-NC-SA-3.0-IGO → **treat as NC-SA by default**;
@@ -620,17 +618,17 @@ zero-filled). Acquisition: `src/acquisition/15_download_state_capacity.py`,
 - **Download**: https://www.wider.unu.edu/sites/default/files/Data/UNUWIDERGRD_2025.xlsx
   (sheet "Merged" = recommended one-row-per-country-year series). **Needs a
   browser User-Agent + Referer** (Azure gateway 403s bare curl); keyless otherwise.
-- **Coverage**: 76/79 tax series (Algeria/Egypt/South Sudan lack it → revenue
+- **Coverage**: 51/54 tax series (Algeria/Egypt/South Sudan lack it → revenue
   fallback), 1980–2023 (2024–2025 NaN). Values are GDP fractions → ×100.
 - **License**: open data; cite doi:10.35188/UNU-WIDER/GRD-2025. Raw gitignored.
-- **Facts verified**: 2026-07-09 (live download; 79/79 present, units checked).
+- **Facts verified**: 2026-07-09 (live download; all study countries present, units checked).
 
 ### V-Dem v16 (Varieties of Democracy) — regime & democracy
 - **Provider**: V-Dem Institute, University of Gothenburg.
 - **Role**: `vdem_polyarchy/libdem/rule_of_law/corruption/regime` + `vdem_terr_control`.
 - **Download (keyless)**: https://raw.githubusercontent.com/vdeminstitute/vdemdata/master/data/vdem.RData
   (the vdem.net CSV is email-gated; the GitHub mirror is not). Read via `pyreadr`.
-- **Coverage**: 72/79 (7 Caribbean microstates absent → NaN), 1789–2025.
+- **Coverage**: 54/54 African study countries, 1789–2025.
 - **License**: CC BY-SA 4.0 (derived columns fine in a private repo; share-alike
   binds only on public release). Cite Coppedge et al. (2026), V-Dem v16.
 - **Gotchas**: `vdem_corruption` is HIGH=more-corrupt (inverted vs democracy
@@ -642,7 +640,7 @@ zero-filled). Acquisition: `src/acquisition/15_download_state_capacity.py`,
 - **Provider**: Center for Systemic Peace (Marshall & Gurr).
 - **Role**: `polity2` (−10..+10) + derived `anocracy_flag` (|polity2| ≤ 5).
 - **Download (keyless)**: https://www.systemicpeace.org/inscr/p5v2018.sav (read via `pyreadstat`).
-- **Coverage**: 69/79, **ends 2018** (2019–2025 NaN). `ccode`→iso3 via the QoG
+- **Coverage**: 52/54, **ends 2018** (2019–2025 NaN). `ccode`→iso3 via the QoG
   `ccodecow`↔`ccodealp` bridge (reused from the colonial COW lane).
 - **License**: free academic use; cite Marshall & Gurr, Polity5 (2020).
 - **Gotchas**: use `polity2` (interpolated; −66/−77/−88 already NaN), not `polity`.
@@ -653,7 +651,7 @@ zero-filled). Acquisition: `src/acquisition/15_download_state_capacity.py`,
 - **Role**: `pts_amnesty/state/hrw` (1–5) + coalesced `pts_score` (State→Amnesty→HRW).
 - **Download (keyless)**: https://www.politicalterrorscale.org/Data/Files/PTS-2025.csv
   (**Latin-1 encoded**, not UTF-8).
-- **Coverage**: 79/79, 1976–2024 (2025 NaN). iso3 = `WordBank_Code_A`; DR Congo
+- **Coverage**: 54/54, 1976–2024 (2025 NaN). iso3 = `WordBank_Code_A`; DR Congo
   ships under legacy `ZAR` → remapped to `COD`.
 - **License**: CC BY-NC 4.0 (non-commercial; private research repo + derived
   columns OK). Cite Gibney et al., PTS 1976–2024; Wood & Gibney (2010) HRQ 32(2).
@@ -666,7 +664,7 @@ zero-filled). Acquisition: `src/acquisition/15_download_state_capacity.py`,
 - **Role**: refugee/asylum/IDP stocks + return/new-displacement flows → the
   displacement columns (both cause & consequence of conflict; mediator to lag).
 - **Download (keyless)**: UNHCR API `https://api.unhcr.org/population/v1/population/?limit=100000&yearFrom=1989&yearTo=2025&coo_all=true&columns=...` (key on RETURNED `coo_iso`=ISO3, NOT the `coo` request param). IDMC via HDX package `idmc_internal_displacement_conflict-violence_disasters` (xlsx sheet `1_Displacement_data`, keyed clean ISO3); the resource URL carries a version suffix (…-NN.xlsx) that changes on refresh, so `17_download_displacement.py` **resolves it at runtime** via the HDX package_show API.
-- **Coverage**: UNHCR origin totals 79/79, 1989–2025. IDMC 2008–2024 (2025 NaN); conflict-stock on the ~41 conflict-affected study countries (rest genuinely no conflict IDPs → NaN).
+- **Coverage**: UNHCR origin totals 54/54, 1989–2025. IDMC 2008–2024 (2025 NaN); conflict-stock on the 35 conflict-affected study countries (rest genuinely no conflict IDPs → NaN).
 - **License**: UNHCR CC BY 4.0; IDMC CC BY (HDX). Derived columns fine; raw gitignored.
 - **Gotchas**: keep stocks and flows in SEPARATE columns (never sum). UNHCR explicit reported 0 is a real 0; a missing origin-year is NaN. Reindexed to the panel by left-join (unobserved → NaN, never zero).
 - **Facts verified**: 2026-07-13 (live pull; Colombia 6.27M / Rwanda 2.26M / Haiti 1.57M cross-checked).
@@ -681,7 +679,7 @@ Acquisition: `src/acquisition/18_download_cru_temp.py`, `19_download_travel_time
 - **Provider**: Climatic Research Unit, University of East Anglia.
 - **Role**: district annual mean temperature (`temp_mean`) + heat anomaly (`temp_anomaly`); a second exogenous weather shock.
 - **Download (keyless)**: UEA mirror, decade chunks `https://crudata.uea.ac.uk/cru/data/hrg/cru_ts_4.09/cruts.2503051245.v4.09/tmp/cru_ts4.09.<decade>.tmp.dat.nc.gz` (the CEDA path is login-gated). Monthly 0.5° NetCDF → annual-mean raster → exactextract, mirroring the CHIRPS lane.
-- **Coverage**: global; 1989–2024 (2025 NaN). Africa/S.America 100%; a few micro-islands (St Lucia) fall in CRU sea cells → NaN.
+- **Coverage**: global; 1989–2024 (2025 NaN). Effectively all study districts; a few micro-island districts fall in CRU sea cells → NaN.
 - **License**: OGL-UK-3.0 (redistributable, attribution). Cite Harris et al. 2020, Sci Data 7:109.
 - **Facts verified**: 2026-07-13 (live download; Niger 30°C / Chile 10°C / DRC 24°C sane).
 
@@ -689,7 +687,7 @@ Acquisition: `src/acquisition/18_download_cru_temp.py`, `19_download_travel_time
 - **Provider**: Malaria Atlas Project (Weiss et al. 2018, Nature).
 - **Role**: district median/mean travel time to nearest city; market access + state reach.
 - **Download (keyless)**: GeoServer WCS 2.0.1, coverage `Accessibility__201501_Global_Travel_Time_to_Cities`, subset to two continental bboxes (Africa; South America + Caribbean) to avoid the multi-GB global grab.
-- **Coverage**: ~99.9% of study districts (13 micro-island districts NaN). TIME-INVARIANT (2015 snapshot). nodata −9999; value 0 = inside a city (valid).
+- **Coverage**: all but 2 micro-island study districts (NaN). TIME-INVARIANT (2015 snapshot). nodata −9999; value 0 = inside a city (valid).
 - **License**: CC BY 4.0. Cite Weiss, D.J. et al., Nature (2018).
 - **Facts verified**: 2026-07-13 (live WCS; median 0–6476 min).
 
@@ -705,7 +703,7 @@ Acquisition: `src/acquisition/18_download_cru_temp.py`, `19_download_travel_time
 - **Provider**: ETH Zurich, International Conflict Research (icr.ethz.ch/data/epr), v2021.
 - **Role**: district share under politically-EXCLUDED ethnic groups + fractionalization; strongest subnational conflict driver.
 - **Download (keyless)**: `https://icr.ethz.ch/data/epr/core/EPR-2021.csv` + `.../geoepr/GeoEPR-2021.zip`.
-- **Coverage**: 67/79 (12 homogeneous / no-politically-relevant-group countries → NaN); 1989–2021 (2022–2025 NaN). GeoEPR polygons overlaid on districts in an equal-area CRS (EPSG:6933) with `make_valid`; EPR-Core status joined per (group, year).
+- **Coverage**: 47/54 (7 homogeneous / no-politically-relevant-group countries → NaN); 1989–2021 (2022–2025 NaN). GeoEPR polygons overlaid on districts in an equal-area CRS (EPSG:6933) with `make_valid`; EPR-Core status joined per (group, year).
 - **License**: no explicit CC tag; academic use, cite Vogt et al. (2015) JCR 59(7). Ship derived columns only; raw gitignored.
 - **Facts verified**: 2026-07-13 (South Africa excluded-share 0.96 apartheid → 0.0 post-1994; Sudan 0.67).
 
@@ -713,10 +711,10 @@ Acquisition: `src/acquisition/18_download_cru_temp.py`, `19_download_travel_time
 - **Provider**: FEWS NET (USAID Famine Early Warning Systems Network), FDW.
 - **Role**: subnational acute food-insecurity phase (`ipc_phase_max` etc.); bridges agricultural output and conflict.
 - **Download (keyless)**: FDW REST API — dates via `/api/ipcphase/?country_code={ISO2}&scenario=CS`; phase polygons via `/api/ipcphasemap/?country={ISO2}&scenario=CS&collection_date={date}&format=geojson`. Acquisition iterates the study countries × their reporting dates.
-- **Coverage**: 25 study countries, 2011–2025. Africa-heavy; **Haiti** the Americas reach (Colombia/Venezuela 2026-only, out of window). Uses observed CS (Current Status), never ML1/ML2 forecasts.
+- **Coverage**: 24 study countries, 2011–2025 (FEWS monitors the food-crisis belt, not the whole continent). Uses observed CS (Current Status), never ML1/ML2 forecasts.
 - **License**: FEWS NET Public data — free, attribution "Source: FEWS NET, fews.net". Raw gitignored.
 - **Gotchas**: coverage-masked (NaN ≠ 0); same-country overlaps only (drop border slivers); "Not Mapped"/"Missing Data" → NaN. Partly an OUTCOME of conflict — a context/moderator, not a clean exogenous lever.
-- **Facts verified**: 2026-07-13 (South Sudan 2017 famine = phase 5; Haiti covered).
+- **Facts verified**: 2026-07-13 (South Sudan 2017 famine = phase 5).
 
 ### FAOSTAT QCL — agricultural output (study enrichment)
 - **Provider**: FAO, FAOSTAT "Production: Crops and livestock products" (QCL).
@@ -725,7 +723,7 @@ Acquisition: `src/acquisition/18_download_cru_temp.py`, `19_download_travel_time
   columns + the complete `faostat_ag_long.parquet` companion.
 - **Download**: bulk `Production_Crops_Livestock_E_All_Data_(Normalized).zip`
   (reuses the file fetched by `src/acquisition/04_download_faostat_qcl.py`).
-- **Coverage**: all 79 study countries, 1961–2024 (2025 NaN). Elements Production
+- **Coverage**: all 54 study countries, 1961–2024 (2025 NaN). Elements Production
   (t), Area harvested (ha), Yield (kg/ha).
 - **License**: CC BY 4.0 (FAOSTAT). Raw gitignored; MANIFEST from lane 04.
 - **Gotchas**: M49→ISO3 (Sudan-former M49 736→SDN for pre-2012); FAO group-total
@@ -736,9 +734,9 @@ Acquisition: `src/acquisition/18_download_cru_temp.py`, `19_download_travel_time
 
 ### USGS Mineral Industries GIS of Africa — gold (+ diamonds/minerals complement)
 - **Provider**: USGS National Minerals Information Center. "Compilation of Geospatial Data (GIS) for the Mineral Industries and Related Infrastructure of Africa" (2021), DOI 10.5066/P97EQWXP.
-- **Role**: African gold deposits/mines (`has_gold`, `n_gold_deposits`) — MRDS badly undercounts African artisanal/industrial gold (Mali 4, Burkina 5 vs true dozens), so Africa uses this USGS compilation; the Americas keep MRDS.
+- **Role**: African gold deposits/mines (`has_gold`, `n_gold_deposits`) — MRDS badly undercounts African artisanal/industrial gold (Mali 4, Burkina 5 vs true dozens), so this USGS compilation is the primary source (MRDS still contributes to the `has_gold` union).
 - **Download (keyless, CC0)**: ScienceBase file `Africa_GIS.gdb.zip` (138 MB file geodatabase), item 607611a9d34e018b3201cbbf. Gold identified where any `DsgAttr*` field == "Gold" across the 3 point layers (AFR_Mineral_Facilities / _Deposits / _Exploration).
 - **Coverage**: all 54 African study countries; 952 gold points. Fills the gap: Mali 4→62, Burkina 5→69, Ghana 26→105, Tanzania 5→64, DRC 8→33 gold sites. Sudan still thin (12). Point-in-polygon join to the CGAZ admin-2 spine; district-constant (static ~2018 snapshot).
 - **License**: CC0 1.0 / public domain. Fully redistributable.
-- **Gotchas**: commodity lives in cryptic `DsgAttr*` fields (use the FGDC aliases); geometry is Point Z (force to 2D); no artisanal/lootable attribute is derivable (unlike DIADATA for diamonds); counts are not cross-region comparable with the MRDS Americas gold (use `has_gold` for that).
+- **Gotchas**: commodity lives in cryptic `DsgAttr*` fields (use the FGDC aliases); geometry is Point Z (force to 2D); no artisanal/lootable attribute is derivable (unlike DIADATA for diamonds); counts are not comparable with MRDS-derived counts (use `has_gold` for presence).
 - **Facts verified**: 2026-07-14 (live parse; per-country gold counts cross-checked).

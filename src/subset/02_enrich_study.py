@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Enrich the Africa+SouthAmerica+Caribbean study panel with the new layers.
+"""Enrich the Africa study panel with the new layers.
 
 Purpose
 -------
 Left-join the enrichment interim tables onto the region-filtered study panel
-(`panel_africa_samerica_caribbean.parquet` from src/subset/01_region_filter.py)
+(`panel_africa.parquet` from src/subset/01_region_filter.py)
 and derive the time-varying columns that need `year`.
 
 Layers joined
@@ -33,10 +33,10 @@ Derived here
 
 Inputs / Output
 ---------------
-    in:  data/processed/panel_africa_samerica_caribbean.parquet   (study base, 63 cols)
+    in:  data/processed/panel_africa.parquet   (study base, 63 cols)
          data/interim/{colonial,state_capacity,regime,repression,
                        faw_district_year,locust_district_year}.parquet
-    out: data/processed/panel_africa_samerica_caribbean_enriched.parquet
+    out: data/processed/panel_africa_enriched.parquet
          One row per (district_id, year); base + colonial + mediator + pest layers.
 
 Run
@@ -52,7 +52,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
-BASE = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean.parquet"
+BASE = ROOT / "data" / "processed" / "panel_africa.parquet"
 COLONIAL = ROOT / "data" / "interim" / "colonial.parquet"
 FAW = ROOT / "data" / "interim" / "faw_district_year.parquet"
 LOCUST = ROOT / "data" / "interim" / "locust_district_year.parquet"
@@ -66,7 +66,7 @@ RESOURCES = ROOT / "data" / "interim" / "resources.parquet"
 ETHNIC = ROOT / "data" / "interim" / "ethnic_epr.parquet"
 FOOD_INSEC = ROOT / "data" / "interim" / "food_insecurity.parquet"
 FAOSTAT_AG = ROOT / "data" / "interim" / "faostat_ag.parquet"
-OUT = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean_enriched.parquet"
+OUT = ROOT / "data" / "processed" / "panel_africa_enriched.parquet"
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger("enrich")
@@ -177,10 +177,9 @@ def main() -> None:
                  .rename("dl_first_gregarious_year").reset_index())
     df = df.merge(loc_first, on="district_id", how="left")
 
-    # Pest layers are Africa-only BY DESIGN (no georeferenced locust/FAW data exists
-    # for South America or the Caribbean). Mask any stray non-African matches to NaN
-    # so the columns cannot imply Americas coverage — in practice this is only 2
-    # isolated Peru FAMEWS trap-checks (2021, no FAW detected).
+    # Pest layers are Africa-only BY DESIGN. With the study now Africa-only this
+    # mask is a no-op guard; it stays so the invariant survives any future region
+    # change (a non-African row can never imply pest coverage).
     pest_cols = (FAW_OBS + ["faw_first_detection_year", "years_since_faw_arrival", "faw_arrived"]
                  + LOCUST_OBS + ["dl_first_gregarious_year"])
     n_masked = int(df.loc[df["region"] != "Africa", pest_cols].notna().any(axis=1).sum())

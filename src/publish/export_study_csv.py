@@ -3,10 +3,10 @@
 
 Purpose
 -------
-Produce CSV exports of the Africa + South America + Caribbean *study* panel (the
-region-specific, fully-enriched 173-column dataset) for analysis / sharing in the
-PRIVATE research repo: a full gzipped CSV, and a small uncompressed sample GitHub
-renders as a browsable table.
+Produce CSV exports of the Africa *study* panel (the region-specific,
+fully-enriched dataset) for analysis / sharing in the PRIVATE research repo:
+a full gzipped CSV, and a small uncompressed sample GitHub renders as a
+browsable table.
 
 LICENSE NOTE
 ------------
@@ -19,11 +19,11 @@ CSVs are a convenience artifact.
 
 Input
 -----
-    data/processed/panel_africa_samerica_caribbean_enriched.parquet
+    data/processed/panel_africa_enriched.parquet
 
 Outputs
 -------
-    data/published/hurp_study_panel_full.csv.gz     (all 173 columns, gzipped)
+    data/published/hurp_study_panel_full.csv.gz     (all columns, gzipped)
     data/published/hurp_study_panel_sample.csv      (illustrative sample, rendered)
 
 Run
@@ -39,7 +39,7 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
-PANEL = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean_enriched.parquet"
+PANEL = ROOT / "data" / "processed" / "panel_africa_enriched.parquet"
 PUB = ROOT / "data" / "published"
 FULL = PUB / "hurp_study_panel_full.csv.gz"
 SAMPLE = PUB / "hurp_study_panel_sample.csv"
@@ -74,8 +74,8 @@ def main() -> int:
     df.to_csv(FULL, index=False, compression={"method": "gzip", "compresslevel": 9})
     print(f"wrote {FULL.relative_to(ROOT)}  ({FULL.stat().st_size / 1e6:.1f} MB gzipped)")
 
-    # Browsable sample: a few district-years from one country per region + recent years.
-    picks = {"NGA": [2015, 2020], "ETH": [1989, 2020], "BRA": [2015, 2020], "HTI": [2010, 2020]}
+    # Browsable sample: a few district-years from countries across the continent.
+    picks = {"NGA": [2015, 2020], "ETH": [1989, 2020], "MLI": [2012, 2020], "ZAF": [1994, 2020]}
     parts = [df[(df["iso3"] == iso) & (df["year"].isin(yrs))] for iso, yrs in picks.items()]
     sample = pd.concat(parts).groupby("iso3", group_keys=False).head(100)
     sample.to_csv(SAMPLE, index=False)

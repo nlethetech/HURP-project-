@@ -11,8 +11,8 @@ conflict; adds within-country variation the (country-level) colonial layer lacks
 
 Method
 ------
-- Restrict the spine to the 79 study countries (GeoEPR is dense in Africa,
-  sparse in the Americas — many countries have no politically-relevant groups).
+- Restrict the spine to the study countries (the crosswalk `kept` set; some
+  countries have no politically-relevant groups and stay NaN).
 - Reproject spine + GeoEPR to an equal-area CRS (EPSG:6933) for correct areas.
 - Overlay (intersection) → per (district, group-period) area.
 - Expand group-periods and EPR-Core status-periods to YEARS, join on

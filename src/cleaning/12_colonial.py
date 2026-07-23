@@ -18,7 +18,7 @@ Inputs
 Output
 ------
     data/interim/colonial.parquet   one row per iso3 (global; the study subset
-    keeps only its 79). Columns documented in docs/CODEBOOK.md.
+    keeps only its countries). Columns documented in docs/CODEBOOK.md.
 
 Run
 ---

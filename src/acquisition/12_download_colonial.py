@@ -3,8 +3,8 @@
 
 Purpose
 -------
-Acquire the country-level colonial-legacy layer for the Africa + South America +
-Caribbean study panel (see docs/DATA_SOURCES.md, "Colonial legacy layer"). All
+Acquire the country-level colonial-legacy layer for the Africa study panel
+(see docs/DATA_SOURCES.md, "Colonial legacy layer"). All
 three are small, static, country-level files that become MODERATORS (interacted
 with the time-varying conflict/output shocks), never standalone predictors.
 
@@ -15,7 +15,7 @@ Sources / registry
    License CC0 1.0 (public domain) -> redistributable. Gives colonizer identity
    (8 European powers) + colonial start/end years.
 2. QoG Standard Cross-Section (jan22). University of Gothenburg. Carries
-   `ht_colonial` (Hadenius-Teorell colonizer identity, complete for our 79) and
+   `ht_colonial` (Hadenius-Teorell colonizer identity, complete for the study countries) and
    `lp_legor` (La Porta legal origin) keyed by ISO3 (`ccodealp`) and COW code
    (`ccodecow`, used to bridge COW -> ISO3). Free academic use, cite QoG.
    NB: jan22 is pinned because `lp_legor` was dropped from QoG >= jan23.

@@ -262,14 +262,14 @@ join cardinalities, and the distributions above.
 
 ---
 
-## Study subset — Africa + South America + Caribbean
+## Study subset — Africa
 
 `src/subset/01_region_filter.py` derives two grouping columns from `iso3`
 (deterministically, via `country_converter`) and cuts the region-restricted
 study panel for the conflict × agriculture investigation. It writes:
 
-- `data/processed/panel_africa_samerica_caribbean.parquet` — the study panel,
-  **583,490 rows × 63 columns**, one row per `(district_id, year)`, 1989–2025.
+- `data/processed/panel_africa.parquet` — the study panel,
+  **197,469 rows × 63 columns**, one row per `(district_id, year)`, 1989–2025.
 - `reference/iso3_region_crosswalk.csv` — every `iso3` in the master panel →
   `continent`, `region`, `kept` flag (committed; the full audit of what went
   where).
@@ -277,24 +277,19 @@ study panel for the conflict × agriculture investigation. It writes:
 | Variable | Definition | Unit | Source | Construction notes |
 |----------|------------|------|--------|--------------------|
 | `continent` | Continent of the district's country. | text | derived (`country_converter` from `iso3`) | `Africa`, `America`, `Asia`, `Europe`, `Oceania`, `Antarctica`. |
-| `region` | Study region. Inside the Americas this is the UN sub-region; elsewhere it equals `continent`. | text | derived (`country_converter` from `iso3`) | `Africa` \| `South America` \| `Central America` \| `Caribbean` \| `Northern America` \| `<continent>`. |
+| `region` | Study region. Inside the Americas this is the UN sub-region; elsewhere it equals `continent`. | text | derived (`country_converter` from `iso3`) | `Africa` \| `South America` \| `Central America` \| `Caribbean` \| `Northern America` \| `<continent>`. Constant `Africa` in the study panel; kept for schema stability. |
 
-**Subset rule.** Keep `region ∈ {Africa, South America, Caribbean}`. This is a
-strict row filter of the master panel plus the two derived columns — no other
-value is changed, so every fill/mask/carry-forward documented above is
-preserved. Result: **79 countries** — 54 Africa, 12 South America, 13 Caribbean.
+**Subset rule.** Keep `region == Africa`. This is a strict row filter of the
+master panel plus the two derived columns — no other value is changed, so every
+fill/mask/carry-forward documented above is preserved. Result: **54 countries,
+197,469 rows**.
 
-| Region | Rows | Countries |
-|--------|------|-----------|
-| Africa | 197,469 | 54 |
-| South America | 317,904 | 12 |
-| Caribbean | 68,117 | 13 |
-
-**Deliberately excluded** (documented so the boundary is explicit): all of
-**Central America** (incl. Guatemala, El Salvador, Nicaragua, Panama, Costa
-Rica, Honduras, Belize), **Northern America** (US, Canada, Mexico, Greenland),
-and every district outside Africa and the Americas. The rest of the master
-panel is untouched and still rebuildable.
+**Deliberately excluded** (documented so the boundary is explicit): the whole
+of the Americas — **South America and the Caribbean** (in the study until it
+was narrowed to Africa only), **Central America** (incl. Guatemala, El
+Salvador, Nicaragua, Panama, Costa Rica, Honduras, Belize), **Northern
+America** (US, Canada, Mexico, Greenland) — and every district outside Africa.
+The rest of the master panel is untouched and still rebuildable.
 
 ---
 
@@ -302,13 +297,13 @@ panel is untouched and still rebuildable.
 
 Country-level colonial-legacy moderators added by `src/cleaning/12_colonial.py`
 (→ `data/interim/colonial.parquet`) and joined onto the study panel by
-`src/subset/02_enrich_study.py` (→ `panel_africa_samerica_caribbean_enriched.parquet`).
+`src/subset/02_enrich_study.py` (→ `panel_africa_enriched.parquet`).
 Sources: COLDAT (CC0), QoG jan22 (`ht_colonial`, `lp_legor`), COW state-system
 membership — see `docs/DATA_SOURCES.md`, "Colonial legacy". Every column is
 TIME-INVARIANT and broadcast onto all district-years by `iso3` — **usable only as
 interactions/moderators with the time-varying shocks** (a country fixed effect
 absorbs them), except `years_since_independence`, which varies over the panel.
-Coverage: **79/79 study countries** carry `colonizer`, `civil_vs_common`, and
+Coverage: **54/54 study countries** carry `colonizer`, `civil_vs_common`, and
 `independence_year` (zero missing).
 
 | Variable | Definition | Source | Notes |
@@ -318,14 +313,14 @@ Coverage: **79/79 study countries** carry `colonizer`, `civil_vs_common`, and
 | `col_ever_colonized` | 1 if `colonizer` is a real power, else 0 (Ethiopia, Liberia = 0). | derived | |
 | `coldat_n_colonizers` | Count of distinct European colonizers in COLDAT (flags multi-colonizer cases, e.g. Cameroon). | COLDAT | |
 | `col_start_year` | First year of colonial rule (min `colstart`, `_mean` aggregation). | COLDAT | NaN for never-colonized. |
-| `col_end_year` | Decolonization year (max `colend`, `_mean` aggregation). | COLDAT | The best "when was it freed from colonial rule" value (e.g. Haiti 1804). NaN for never-colonized. |
+| `col_end_year` | Decolonization year (max `colend`, `_mean` aggregation). | COLDAT | The best "when was it freed from colonial rule" value (e.g. Ghana 1957). NaN for never-colonized. |
 | `col_duration_years` | `col_end_year − col_start_year`; length of colonial rule, an extraction-intensity proxy. | derived | NaN for never-colonized. |
-| `independence_year` | Year the state entered the international system. | COW `styear` | ≠ `col_end_year` for occupation/protectorate artifacts (Haiti 1934, Ethiopia 1941). Range 1822 (Brazil) – 2011 (South Sudan). |
+| `independence_year` | Year the state entered the international system. | COW `styear` | ≠ `col_end_year` for occupation/protectorate artifacts (Ethiopia 1941). Range 1920 (South Africa, Liberia — COW entry) – 2011 (South Sudan). |
 | `years_since_independence` | `year − independence_year`. **The one time-VARYING colonial column** (survives a country FE); a slow post-colonial state-consolidation control. | derived | |
-| `legal_origin` | La Porta legal origin: English / French / Socialist / German / Scandinavian. Raw `lp_legor` (NaN for 9 study countries). | QoG `lp_legor` | The legal/policing institutional-tradition channel. |
-| `legal_origin_filled` | `legal_origin` with the 9 blanks imputed from `colonizer` (British/US→English; else→French). | derived | |
-| `legal_origin_imputed` | 1 if `legal_origin_filled` was imputed (raw `lp_legor` was blank), else 0. | derived | Transparency flag for the 9 imputed countries. |
-| `civil_vs_common` | Binary legal tradition: `common` (English legal origin) vs `civil` (all others). | derived | Study countries: 31 common, 48 civil. |
+| `legal_origin` | La Porta legal origin: English / French / Socialist / German / Scandinavian. Raw `lp_legor` (NaN for 6 study countries). | QoG `lp_legor` | The legal/policing institutional-tradition channel. |
+| `legal_origin_filled` | `legal_origin` with the 6 blanks imputed from `colonizer` (British/US→English; else→French). | derived | |
+| `legal_origin_imputed` | 1 if `legal_origin_filled` was imputed (raw `lp_legor` was blank), else 0. | derived | Transparency flag for the 6 imputed countries (COM, ERI, ETH, NAM, SDN, SSD). |
+| `civil_vs_common` | Binary legal tradition: `common` (English legal origin) vs `civil` (all others). | derived | Study countries: 19 common, 35 civil. |
 | `col_british` / `col_french` / `col_iberian` | 0/1 moderator-split dummies (`colonizer` == British / French / in {Spanish, Portuguese}). | derived | Key off `colonizer` (ht_colonial primary power), so Italian-primary states (Libya, Somalia) intentionally carry all three = 0 even where a *secondary* British administration existed. |
 
 **Caveats (read before using the date columns):**
@@ -340,8 +335,8 @@ Coverage: **79/79 study countries** carry `colonizer`, `civil_vs_common`, and
 - `independence_year` = COW state-system entry, corrected where that reflects a
   contested/unrecognized entry (`ZWE` set to 1980, not the 1965 white-minority
   UDI). It can still differ from `col_end_year` for occupation/protectorate
-  artifacts (Haiti 1934, Ethiopia 1941).
-- Imputed legal origins (`legal_origin_imputed==1`, 9 study countries) are a crude
+  artifacts (Ethiopia 1941).
+- Imputed legal origins (`legal_origin_imputed==1`, 6 study countries) are a crude
   colonizer→legal-family proxy. `ERI` is overridden to French/civil (Italian +
   Ethiopian heritage); `NAM` remains English/common via South-African heritage
   (contested) — treat `civil_vs_common` for these imputed cells with care.
@@ -355,9 +350,7 @@ Coverage: **79/79 study countries** carry `colonizer`, `civil_vs_common`, and
 
 Two georeferenced crop-pest shocks joined by `src/subset/02_enrich_study.py` from
 `data/interim/{faw,locust}_district_year.parquet` (built by
-`src/cleaning/13_faw.py`, `14_locust.py`). **Africa-only by design** — no
-georeferenced locust/FAW data exists for South America or the Caribbean, so every
-pest column is NaN for all Americas rows (a species-range fact). Both are
+`src/cleaning/13_faw.py`, `14_locust.py`). Both are
 MONITORING/SURVEY feeds: **a missing district-year is *not observed*, not
 pest-free** — the columns are NEVER zero-filled across the frame; only observed
 district-years carry values (values incl. a true 0 where a monitored district-year
@@ -385,15 +378,14 @@ first-detection-year constants are broadcast to all of a district's years.
 districts** (623 of them confirmed FAW at least once), **42 African countries
 monitored** (35 recorded a confirmed detection), 2018–2025. Locust = 1,236
 observed district-years, 630 districts, **20 belt countries**, 2004–2025
-(captures the 2019–22 upsurge, 2020 peak). Both NaN for all 12 South American +
-13 Caribbean countries. Note: source feeds run to 2026, but the panel ends 2025,
-so 7 out-of-window 2026 locust observations are dropped at merge (logged).
+(captures the 2019–22 upsurge, 2020 peak). Note: source feeds run to 2026, but
+the panel ends 2025, so 7 out-of-window 2026 locust observations are dropped at
+merge (logged).
 
 **Use as an exogenous shock, not a control.** Locust plagues and the FAW invasion
 front are weather/wave-driven, not conflict-caused — that is what lets them
-identify the *agriculture → conflict* arrow. Interact with the colonial moderators
-and read as an **Africa-subsample** result; the Americas are honestly uncovered on
-pest.
+identify the *agriculture → conflict* arrow. Interact with the colonial
+moderators.
 
 ---
 
@@ -405,12 +397,12 @@ All are **iso3_broadcast** (one country-year value copied to every district of
 that country-year), **TIME-VARYING**, and **NaN where unobserved — never
 zero-filled**. They are *mediators* between the shocks and conflict (why a shock
 does or doesn't become violence); several are partly endogenous to conflict, so
-**lag them (t−1); do not treat as clean exogenous causes.** Covers all 79 where
+**lag them (t−1); do not treat as clean exogenous causes.** Covers all 54 where
 the source does (microstates thin — see per-column notes).
 
 ### State capacity — ICTD/UNU-WIDER Government Revenue Dataset (GRD 2025)
 Fiscal capacity: the state's ability to raise revenue. Values are % of GDP.
-Coverage: tax series 76/79 (Algeria, Egypt, South Sudan lack it → use revenue),
+Coverage: tax series 51/54 (Algeria, Egypt, South Sudan lack it → use revenue),
 1989–2023 (2024–2025 NaN).
 
 | Variable | Definition | Notes |
@@ -423,9 +415,8 @@ Coverage: tax series 76/79 (Algeria, Egypt, South Sudan lack it → use revenue)
 | `grd_quality_flag` | 1 if GRD flagged any data-quality caution for the observation. | |
 
 ### Regime & democracy — V-Dem v16 + Polity5
-Coverage: V-Dem 72/79 (7 Caribbean microstates — Antigua, Bahamas, Dominica,
-Grenada, St Kitts, St Lucia, St Vincent — absent → NaN), 1989–2025. Polity 69/79,
-1989–2018 (2019–2025 NaN; project ended).
+Coverage: V-Dem 54/54, 1989–2025. Polity 52/54 (São Tomé & Príncipe and
+Seychelles absent → NaN), 1989–2018 (2019–2025 NaN; project ended).
 
 | Variable | Definition | Notes |
 |----------|------------|-------|
@@ -439,7 +430,7 @@ Grenada, St Kitts, St Lucia, St Vincent — absent → NaN), 1989–2025. Polity
 | `anocracy_flag` | 1 if `|polity2| ≤ 5` (anocracy — most conflict-prone), else 0; NaN where polity2 NaN. | |
 
 ### State repression — Political Terror Scale (PTS-2025)
-Physical-integrity repression, 1–5 (5 = worst). Coverage 79/79, 1989–2024
+Physical-integrity repression, 1–5 (5 = worst). Coverage 54/54, 1989–2024
 (2025 NaN). DR Congo carried under legacy code `ZAR` → remapped to `COD`.
 
 | Variable | Definition | Notes |
@@ -452,14 +443,13 @@ Physical-integrity repression, 1–5 (5 = worst). Coverage 79/79, 1989–2024
 Forced displacement, country-year, iso3_broadcast, TIME-VARYING, NaN where
 unobserved (never zero-filled; a missing IDMC row is not zero displacement).
 **Stocks and flows are separate columns — never sum them.** Both a cause and a
-consequence of conflict (mediator; lag it). Best Americas reach of the new
-layers (Colombia/Venezuela conflict IDPs, Haiti disaster+conflict). UNHCR origin
-totals 79/79; IDMC 2008–2024 (2025 NaN), conflict-stock on the ~41 conflict-
-affected study countries.
+consequence of conflict (mediator; lag it). UNHCR origin totals 54/54; IDMC
+2008–2024 (2025 NaN), conflict-stock on the 35 conflict-affected study
+countries.
 
 | Variable | Definition | Source | Notes |
 |----------|------------|--------|-------|
-| `refugees_origin` | Refugees originating FROM the country (end-year stock). | UNHCR | 79/79. |
+| `refugees_origin` | Refugees originating FROM the country (end-year stock). | UNHCR | 54/54. |
 | `asylum_seekers_origin` | Asylum-seekers originating from the country (stock). | UNHCR | |
 | `idp_stock_unhcr` | UNHCR-reported IDP stock. | UNHCR | Sparse pre-1993. |
 | `returned_refugees` | Refugees returned that year (FLOW). | UNHCR | Do not add to stocks. |
@@ -514,15 +504,15 @@ East-African oil frontier (Uganda 2006, Kenya 2012) → those are false zeros.
 | `has_diamond` / `n_diamond_deposits` | Any / count of diamond deposits. |
 | `n_diamond_primary` / `n_diamond_secondary` | Kimberlite (primary) vs alluvial (secondary). |
 | `has_lootable_diamond` | 1 if any SECONDARY (alluvial) OR MIXED deposit (both carry an alluvial, easily-looted component) — the conflict-financing flag (e.g. Sierra Leone = 1, Botswana kimberlite = 0). |
-| `has_gold` | 1 if the district has any gold deposit/mine — a major conflict-financing mineral. The **union of both sources** (USGS Mineral Industries GIS of Africa + USGS MRDS), so it can be 1 even where `n_gold_deposits` is 0 (an African district covered only by MRDS). The robust cross-region presence flag. |
-| `n_gold_deposits` | Count of gold sites: **Africa** from USGS GIS (facilities + deposits + exploration, de-duplicated), **the Americas** from MRDS. The two sources differ in density → use *within-region*, not cross-region. Small/emerging producers absent from the source (e.g. Rwanda, Benin) read 0; rare offshore island points are dropped by the strict spatial join. |
+| `has_gold` | 1 if the district has any gold deposit/mine — a major conflict-financing mineral. The **union of both sources** (USGS Mineral Industries GIS of Africa + USGS MRDS), so it can be 1 even where `n_gold_deposits` is 0 (an African district covered only by MRDS). The robust presence flag. |
+| `n_gold_deposits` | Count of gold sites from the USGS Mineral Industries GIS of Africa (facilities + deposits + exploration, de-duplicated). Small/emerging producers absent from the source (e.g. Rwanda, Benin) read 0; rare offshore island points are dropped by the strict spatial join. |
 | `has_oil_gas` vs `has_oil`/`has_gas` | `has_oil_gas` flags any oil/gas field present; `has_oil`/`has_gas` flag the *known* type. A field with RESINFO `---` (unknown type) sets `has_oil_gas=1` while both type flags stay 0 (a real field of undocumented type, not a contradiction). |
 | `n_mineral_deposits` | USGS MRDS deposits in the district. **US-biased; undercounts outside North America** — informational. |
 
 ### Ethnic exclusion — EPR-Core + GeoEPR (`src/cleaning/22_ethnic_epr.py`)
 Share of a district settled by politically EXCLUDED ethnic groups, by year. The
 strongest subnational political conflict driver; adds within-country variation
-the colonial layer lacks. Coverage 67/79 (12 homogeneous / no-politically-
+the colonial layer lacks. Coverage 47/54 (7 homogeneous / no-politically-
 relevant-group countries → NaN); 1989–2021 (2022–2025 NaN, EPR ends 2021).
 
 | Variable | Definition |
@@ -535,9 +525,9 @@ relevant-group countries → NaN); 1989–2021 (2022–2025 NaN, EPR ends 2021).
 ### Food insecurity — FEWS NET IPC phases (`src/cleaning/23_food_insecurity.py`)
 Subnational acute food-insecurity phase (1 Minimal … 5 Famine), the literal
 bridge between agricultural output and conflict. Coverage-masked (NaN where not
-monitored — never zero-filled). 25 study countries, 2011–2025; Africa-heavy with
-**Haiti** the Americas reach (Colombia/Venezuela are 2026-only → out of window).
-Same-country overlaps only (border slivers of a neighbour's FEWS unit dropped).
+monitored — never zero-filled). 24 study countries, 2011–2025 (FEWS monitors
+the food-crisis belt, not the whole continent). Same-country overlaps only
+(border slivers of a neighbour's FEWS unit dropped).
 
 | Variable | Definition |
 |----------|------------|
@@ -558,7 +548,7 @@ built by `src/cleaning/24_faostat_ag.py` from the bulk download already fetched 
 TIME-VARYING; NaN where a country-year does not report the item (never
 zero-filled; a genuine FAOSTAT 0 is kept as 0). 1961–2024 (2025 NaN). The
 **complete** long table (every crop/livestock item × Production/Area/Yield, all
-79 countries, with an `is_aggregate` flag) is `data/interim/faostat_ag_long.parquet`;
+54 countries, with an `is_aggregate` flag) is `data/interim/faostat_ag_long.parquet`;
 the panel carries the headline measures below.
 
 | Variable | Definition |
@@ -569,7 +559,7 @@ the panel carries the headline measures below.
 | `fao_{maize,rice,wheat,sorghum,millet,cassava,beans,groundnuts}_prod_t` | Production (tonnes) of the 8 headline staple crops. |
 | `fao_{...}_yield_kgha` | Yield (kg/ha) of the same 8 staples. |
 
-Coverage: all 79 countries appear in FAOSTAT; `fao_cereal_prod_t` is NaN for 4
-non-cereal island/coastal states (Equatorial Guinea, St Kitts, St Lucia,
-Seychelles) that grow roots/tree crops instead. For any crop beyond the headline
-staples, join `faostat_ag_long.parquet` on (iso3, year, item).
+Coverage: all 54 countries appear in FAOSTAT; `fao_cereal_prod_t` is NaN for 2
+non-cereal states (Equatorial Guinea, Seychelles) that grow roots/tree crops
+instead. For any crop beyond the headline staples, join
+`faostat_ag_long.parquet` on (iso3, year, item).

@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
-PANEL = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean_enriched.parquet"
+PANEL = ROOT / "data" / "processed" / "panel_africa_enriched.parquet"
 CODEBOOK = ROOT / "docs" / "CODEBOOK.md"
 OUT = ROOT / "reports" / "hurp_data_catalog.html"
 
@@ -223,7 +223,7 @@ mark{{background:rgba(224,165,61,.28);color:inherit}}
 </style></head><body><div class="wrap">
 <header>
   <h1>HURP — Conflict × Agriculture Data Catalog</h1>
-  <p>Africa · South America · Caribbean study panel &nbsp;·&nbsp; {regline}</p>
+  <p>Africa study panel &nbsp;·&nbsp; {regline}</p>
 </header>
 <div class="stats">{chips}</div>
 <div class="tools">
@@ -231,7 +231,7 @@ mark{{background:rgba(224,165,61,.28);color:inherit}}
   <div class="nav">{"".join(f'<a href="#L{i}">{html.escape(lab)}</a>' for i,(lab,_) in enumerate(ordered))}</div>
 </div>
 {sections}
-<footer>Generated {date.today().isoformat()} from panel_africa_samerica_caribbean_enriched.parquet ({n_rows:,}×{n_cols}). Definitions from docs/CODEBOOK.md. Full detail & every crop: docs/CODEBOOK.md, docs/DATA_SOURCES.md.</footer>
+<footer>Generated {date.today().isoformat()} from panel_africa_enriched.parquet ({n_rows:,}×{n_cols}). Definitions from docs/CODEBOOK.md. Full detail & every crop: docs/CODEBOOK.md, docs/DATA_SOURCES.md.</footer>
 </div>
 <script>
 const q=document.getElementById('q'), cols=[...document.querySelectorAll('.col')], secs=[...document.querySelectorAll('.layer')];

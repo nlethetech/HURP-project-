@@ -19,12 +19,13 @@ which country went to which region.
 
 Study definition
 ----------------
-Keep `region in {Africa, South America, Caribbean}` -- the three heavily
-colonized, agriculture-dependent regions chosen for the conflict/violence
-<-> agricultural-output investigation (see docs/DATASET_PLAN.md, "Study
-subset"). Everything else is filtered out. No rows are otherwise altered:
-the subset is a strict row filter of the master panel plus the two new
-columns, so every downstream fill/mask from the master panel is preserved.
+Keep `region == Africa` -- the heavily colonized, agriculture-dependent
+continent chosen for the conflict/violence <-> agricultural-output
+investigation (see docs/DATASET_PLAN.md, "Study subset"). Everything else
+is filtered out. No rows are otherwise altered: the subset is a strict row
+filter of the master panel plus the two new columns, so every downstream
+fill/mask from the master panel is preserved. (The study previously also
+covered South America + the Caribbean; it was narrowed to Africa only.)
 
 Inputs
 ------
@@ -33,10 +34,9 @@ Inputs
 
 Outputs
 -------
-    data/processed/panel_africa_samerica_caribbean.parquet
-        Study panel: master rows whose region is Africa / South America /
-        Caribbean, plus `continent` and `region`. One row per
-        (district_id, year); 63 columns.
+    data/processed/panel_africa.parquet
+        Study panel: master rows whose region is Africa, plus `continent`
+        and `region`. One row per (district_id, year); 63 columns.
     reference/iso3_region_crosswalk.csv
         Every iso3 in the master panel -> continent, region, kept flag.
         Small, reproducible, auditable (track in git alongside the scripts).
@@ -55,11 +55,11 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[2]
 MASTER = ROOT / "data" / "processed" / "panel_district_year.parquet"
-OUT_PANEL = ROOT / "data" / "processed" / "panel_africa_samerica_caribbean.parquet"
+OUT_PANEL = ROOT / "data" / "processed" / "panel_africa.parquet"
 OUT_CROSSWALK = ROOT / "reference" / "iso3_region_crosswalk.csv"
 
-# The three regions that define the study subset.
-KEEP_REGIONS = ("Africa", "South America", "Caribbean")
+# The region that defines the study subset.
+KEEP_REGIONS = ("Africa",)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger("region_filter")

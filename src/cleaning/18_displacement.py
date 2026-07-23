@@ -85,9 +85,9 @@ def main() -> None:
     ours = set(cw[cw["kept"]]["iso3"])
     log.info("wrote %s: %d country-years, %d countries, %d-%d",
              OUT.name, len(df), df["iso3"].nunique(), int(df["year"].min()), int(df["year"].max()))
-    log.info("study coverage: UNHCR refugees_origin %d/79 | IDMC conflict-stock %d/79",
-             len(ours & set(u[u["refugees_origin"].notna()]["iso3"])),
-             len(ours & set(g[g["idp_stock_conflict"].notna()]["iso3"])))
+    log.info("study coverage: UNHCR refugees_origin %d/%d | IDMC conflict-stock %d/%d",
+             len(ours & set(u[u["refugees_origin"].notna()]["iso3"])), len(ours),
+             len(ours & set(g[g["idp_stock_conflict"].notna()]["iso3"])), len(ours))
     log.info("IDMC year range: %d-%d | UNHCR idp (starts 1993) min year: %d",
              int(g["year"].min()), int(g["year"].max()),
              int(u[u["idp_stock_unhcr"].notna()]["year"].min()))
